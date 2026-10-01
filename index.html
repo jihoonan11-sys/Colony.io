@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colony.io - Ant Kingdom Survival</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Outfit', 'Fredoka', sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+        .title-glow {
+            text-shadow: 0 0 20px rgba(74, 222, 128, 0.6), 0 0 40px rgba(34, 197, 94, 0.4);
+        }
+        .btn-hover {
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-hover:hover {
+            transform: translateY(-3px) scale(1.02);
+            filter: brightness(1.1);
+        }
+        .btn-hover:active {
+            transform: translateY(1px) scale(0.98);
+        }
+    </style>
+</head>
+<body class="relative w-screen h-screen bg-slate-950 text-white overflow-hidden">
+
+    <!-- MAIN MENU SCREEN -->
+    <div id="mainMenuScreen" class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950 px-6">
+        <canvas id="bgCanvas" class="absolute inset-0 z-0 opacity-40"></canvas>
+        
+        <div class="relative z-10 flex flex-col items-center max-w-xl w-full text-center">
+            <div class="mb-8">
+                <span class="inline-block px-4 py-1.5 mb-3 text-xs font-bold tracking-widest text-emerald-400 uppercase bg-emerald-950/80 border border-emerald-500/30 rounded-full shadow-inner">
+                    <i class="fa-solid fa-bug mr-1.5"></i> Multiplayer .io Experience + Advanced Features
+                </span>
+                <h1 class="text-6xl md:text-7xl font-extrabold tracking-tight text-white title-glow mb-3">
+                    COLONY<span class="text-emerald-400">.IO</span>
+                </h1>
+                <p class="text-gray-300 text-lg md:text-xl font-medium max-w-md mx-auto">
+                    Build your empire, survive the Day/Night cycle, research mutations, and conquer rival colonies!
+                </p>
+            </div>
+
+            <div class="flex flex-col gap-4 w-full max-w-sm">
+                <button onclick="openSetupModal()" class="btn-hover w-full py-4 px-8 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-extrabold text-xl rounded-2xl shadow-lg shadow-emerald-600/30 border border-emerald-400/40 flex items-center justify-center gap-3">
+                    <i class="fa-solid fa-play text-lg"></i> PLAY NOW
+                </button>
+                <button onclick="openModal('howToPlayModal')" class="btn-hover w-full py-3.5 px-6 bg-slate-800/90 text-gray-200 font-bold text-base rounded-2xl shadow-md border border-slate-700 flex items-center justify-center gap-3">
+                    <i class="fa-solid fa-book-open text-emerald-400"></i> HOW TO PLAY
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAMEPLAY SCREEN -->
+    <div id="gameScreen" class="absolute inset-0 z-10 hidden flex flex-col">
+        <!-- Top HUD -->
+        <div class="absolute top-4 left-4 z-30 flex gap-4 bg-slate-900/80 backdrop-blur border border-slate-700 px-4 py-2.5 rounded-2xl shadow-lg items-center">
+            <div>
+                <p class="text-xs text-gray-400 font-bold">COLONY</p>
+                <p id="hudColonyName" class="text-emerald-400 font-extrabold text-sm">AntKing99</p>
+            </div>
+            <div class="h-6 w-px bg-slate-700"></div>
+            <div>
+                <p class="text-xs text-gray-400 font-bold">FOOD / RES</p>
+                <p class="text-yellow-400 font-extrabold text-sm"><span id="hudFood">100</span> / <span id="hudMaxFood">300</span> 🍏</p>
+            </div>
+            <div class="h-6 w-px bg-slate-700"></div>
+            <div>
+                <p class="text-xs text-gray-400 font-bold">ANTS</p>
+                <p class="text-sky-400 font-extrabold text-sm"><span id="hudAnts">3</span> / <span id="hudMaxAnts">15</span> 🐜</p>
+            </div>
+            <div class="h-6 w-px bg-slate-700"></div>
+            <div>
+                <p class="text-xs text-gray-400 font-bold">TIME / SEASON</p>
+                <p id="hudEnv" class="text-amber-300 font-extrabold text-xs">☀️ DAY (Spring)</p>
+            </div>
+        </div>
+
+        <!-- Top Right Leaderboard & Quick Action Buttons -->
+        <div class="absolute top-4 right-4 z-30 flex flex-col gap-2 items-end">
+            <div class="bg-slate-900/80 backdrop-blur border border-slate-700 p-3 rounded-2xl shadow-lg w-48">
+                <p class="text-xs font-bold text-gray-400 mb-2 border-b border-slate-800 pb-1">👑 LEADERBOARD</p>
+                <div id="leaderboardList" class="space-y-1 text-xs font-semibold">
+                    <div class="flex justify-between text-emerald-400"><span>1. AntKing99</span><span>120 pts</span></div>
+                    <div class="flex justify-between text-gray-300"><span>2. RedSwarm AI</span><span>95 pts</span></div>
+                    <div class="flex justify-between text-gray-300"><span>3. TitanColony</span><span>80 pts</span></div>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="toggleResearchModal()" class="px-3 py-2 bg-purple-600 hover:bg-purple-500 rounded-xl font-bold text-xs shadow border border-purple-400/40 flex items-center gap-1.5">
+                    <i class="fa-solid fa-flask"></i> Mutations
+                </button>
+                <button onclick="toggleUnderground()" class="px-3 py-2 bg-amber-700 hover:bg-amber-600 rounded-xl font-bold text-xs shadow border border-amber-500/40 flex items-center gap-1.5">
+                    <i class="fa-solid fa-stairs"></i> Underground
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Canvas Area -->
+        <canvas id="gameCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+        <!-- Bottom Action Bar / Production -->
+        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 bg-slate-900/90 backdrop-blur border border-slate-700 px-6 py-3 rounded-3xl shadow-2xl flex items-center gap-4">
+            <div class="text-xs font-bold text-gray-400 mr-2">SPAWN ANTS:</div>
+            <button onclick="spawnAnt('worker')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-bold shadow flex flex-col items-center">
+                <span>Worker Ant</span>
+                <span class="text-[10px] text-yellow-300 font-normal">20 Food</span>
+            </button>
+            <button onclick="spawnAnt('soldier')" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 rounded-xl text-xs font-bold shadow flex flex-col items-center">
+                <span>Soldier Ant</span>
+                <span class="text-[10px] text-yellow-300 font-normal">50 Food</span>
+            </button>
+            <button onclick="spawnAnt('scout')" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 rounded-xl text-xs font-bold shadow flex flex-col items-center">
+                <span>Scout Ant</span>
+                <span class="text-[10px] text-yellow-300 font-normal">40 Food</span>
+            </button>
+            <div class="h-8 w-px bg-slate-700 mx-2"></div>
+            <button onclick="upgradeNest()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-extrabold shadow flex flex-col items-center">
+                <span>Upgrade Nest</span>
+                <span id="nestUpgradeCost" class="text-[10px] text-slate-900 font-bold">200 Food (Lv.1)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- SETUP MODAL -->
+    <div id="setupModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden">
+        <div class="bg-slate-900 border border-slate-700/85 rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl relative">
+            <button onclick="closeModal('setupModal')" class="absolute top-5 right-5 text-gray-400 hover:text-white text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                <i class="fa-solid fa-flag-checkered text-emerald-400"></i> Game Setup
+            </h2>
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-300 mb-2">Colony Name</label>
+                    <input type="text" id="inputColonyName" value="AntKing99" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white font-medium focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-300 mb-2">AI Difficulty</label>
+                    <select id="selectDifficulty" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white font-medium focus:outline-none focus:border-emerald-500">
+                        <option value="easy">Easy (Peaceful)</option>
+                        <option value="normal" selected>Normal (Balanced)</option>
+                        <option value="hard">Hard (Aggressive Wars)</option>
+                    </select>
+                </div>
+                <button onclick="startActualGame()" class="w-full mt-4 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-lg rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rocket"></i> LAUNCH COLONY
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESEARCH / MUTATION MODAL -->
+    <div id="researchModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden">
+        <div class="bg-slate-900 border border-purple-500/40 rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl relative">
+            <button onclick="toggleResearchModal()" class="absolute top-5 right-5 text-gray-400 hover:text-white text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-flask text-purple-400"></i> Mutation Research Lab
+            </h2>
+            <p class="text-xs text-gray-400 mb-6">Spend rare resources (💎) to unlock powerful colony traits.</p>
+            <div class="space-y-3 text-left">
+                <div class="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700 flex items-center justify-between">
+                    <div>
+                        <p class="font-bold text-sm text-white">Hardened Shells</p>
+                        <p class="text-xs text-gray-400">+20% Defense for all ants</p>
+                    </div>
+                    <button onclick="buyResearch('shells')" class="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 rounded-xl text-xs font-bold text-white">5 Gems</button>
+                </div>
+                <div class="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700 flex items-center justify-between">
+                    <div>
+                        <p class="font-bold text-sm text-white">Pheromone Speed</p>
+                        <p class="text-xs text-gray-400">+25% Movement speed</p>
+                    </div>
+                    <button onclick="buyResearch('speed')" class="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 rounded-xl text-xs font-bold text-white">8 Gems</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HOW TO PLAY MODAL -->
+    <div id="howToPlayModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden">
+        <div class="bg-slate-900 border border-slate-700/80 rounded-3xl p-8 max-w-lg w-full mx-4 shadow-2xl relative max-h-[85vh] overflow-y-auto text-left">
+            <button onclick="closeModal('howToPlayModal')" class="absolute top-5 right-5 text-gray-400 hover:text-white text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-book-open text-emerald-400"></i> How To Play
+            </h2>
+            <div class="space-y-3 text-gray-300 text-sm leading-relaxed">
+                <p>⭐ <strong class="text-white">Gather Food:</strong> Workers automatically harvest food and bring it back to your nest.</p>
+                <p>🌙 <strong class="text-white">Day/Night & Seasons:</strong> Night reduces vision; seasons alter food generation.</p>
+                <p>💎 <strong class="text-white">Mutations & Underground:</strong> Collect rare gems to research traits or explore underground safe zones.</p>
+                <p>⚔️ <strong class="text-white">Conquer:</strong> Produce soldiers to attack rival AI colonies!</p>
+            </div>
+            <button onclick="closeModal('howToPlayModal')" class="w-full mt-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition">
+                Got It
+            </button>
+        </div>
+    </div>
+
+    <!-- Script Game Engine & UI Logic -->
+    <script>
+        // Modal Helpers
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function openSetupModal() { openModal('setupModal'); }
+        function toggleResearchModal() {
+            const m = document.getElementById('researchModal');
+            m.classList.toggle('hidden');
+        }
+
+        // Ambient Background Animation for Main Menu
+        const bgCanvas = document.getElementById('bgCanvas');
+        const bgCtx = bgCanvas.getContext('2d');
+        function resizeBg() { bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; }
+        window.addEventListener('resize', resizeBg);
+        resizeBg();
+        const particles = Array.from({length: 30}, () => ({
+            x: Math.random() * bgCanvas.width, y: Math.random() * bgCanvas.height,
+            vx: (Math.random() - 0.5) * 0.6, vy: (Math.random() - 0.5) * 0.6,
+            radius: Math.random() * 3 + 2, color: Math.random() > 0.5 ? '#22c55e' : '#eab308'
+        }));
+        function animateBg() {
+            bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+            particles.forEach(p => {
+                p.x += p.vx; p.y += p.vy;
+                if (p.x < 0) p.x = bgCanvas.width; if (p.x > bgCanvas.width) p.x = 0;
+                if (p.y < 0) p.y = bgCanvas.height; if (p.y > bgCanvas.height) p.y = 0;
+                bgCtx.beginPath(); bgCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                bgCtx.fillStyle = p.color; bgCtx.globalAlpha = 0.4; bgCtx.fill();
+            });
+            requestAnimationFrame(animateBg);
+        }
+        animateBg();
+
+        // Game State & Engine
+        let gameRunning = false;
+        let colonyData = {
+            name: "AntKing99",
+            food: 100, maxFood: 300,
+            ants: 3, maxAnts: 15,
+            level: 1, gems: 2,
+            isUnderground: false
+        };
+
+        function startActualGame() {
+            const nameInput = document.getElementById('inputColonyName').value;
+            if (nameInput) colonyData.name = nameInput;
+            document.getElementById('hudColonyName').innerText = colonyData.name;
+
+            closeModal('setupModal');
+            document.getElementById('mainMenuScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+
+            initGameEngine();
+        }
+
+        function toggleUnderground() {
+            colonyData.isUnderground = !colonyData.isUnderground;
+            alert(colonyData.isUnderground ? "Entered Underground Labyrinth (Safe Zone)!" : "Returned to Surface World!");
+        }
+
+        function spawnAnt(type) {
+            let cost = type === 'worker' ? 20 : (type === 'soldier' ? 50 : 40);
+            if (colonyData.food >= cost && colonyData.ants < colonyData.maxAnts) {
+                colonyData.food -= cost;
+                colonyData.ants += 1;
+                updateHUD();
+            } else {
+                alert("Not enough food or colony population limit reached!");
+            }
+        }
+
+        function upgradeNest() {
+            let costs = [200, 500, 1000, 1600, 2500];
+            let cost = costs[colonyData.level - 1] || 2500;
+            if (colonyData.level >= 5) {
+                alert("Colony is already at maximum Level 5!");
+                return;
+            }
+            if (colonyData.food >= cost) {
+                colonyData.food -= cost;
+                colonyData.level += 1;
+                colonyData.maxAnts += 15;
+                colonyData.maxFood += 300;
+                document.getElementById('nestUpgradeCost').innerText = colonyData.level < 5 ? `${costs[colonyData.level-1]} Food (Lv.${colonyData.level})` : "MAX LEVEL";
+                updateHUD();
+                alert("Colony Upgraded Successfully! Territory expanded.");
+            } else {
+                alert("Not enough food for nest upgrade!");
+            }
+        }
+
+        function buyResearch(type) {
+            if (colonyData.gems >= 5) {
+                colonyData.gems -= 5;
+                alert(`Research Completed: ${type} unlocked!`);
+                toggleResearchModal();
+            } else {
+                alert("Not enough Rare Gems (💎)!");
+            }
+        }
+
+        function updateHUD() {
+            document.getElementById('hudFood').innerText = colonyData.food;
+            document.getElementById('hudMaxFood').innerText = colonyData.maxFood;
+            document.getElementById('hudAnts').innerText = colonyData.ants;
+            document.getElementById('hudMaxAnts').innerText = colonyData.maxAnts;
+        }
+
+        // Canvas Simulation Loop
+        function initGameEngine() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight - 60;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            // Entities
+            let resources = Array.from({length: 15}, () => ({
+                x: Math.random() * (canvas.width - 200) + 100,
+                y: Math.random() * (canvas.height - 200) + 100,
+                type: Math.random() > 0.3 ? 'food' : 'gem',
+                amount: 25
+            }));
+
+            let nest = { x: canvas.width / 2, y: canvas.height / 2, radius: 40 };
+            let ants = Array.from({length: 3}, () => ({
+                x: nest.x + (Math.random() - 0.5) * 40,
+                y: nest.y + (Math.random() - 0.5) * 40,
+                vx: 0, vy: 0
+            }));
+
+            let timeTicker = 0;
+            let dayState = "☀️ DAY (Spring)";
+
+            function gameLoop() {
+                timeTicker++;
+                if (timeTicker % 600 === 0) {
+                    colonyData.food = Math.min(colonyData.maxFood, colonyData.food + 5);
+                    updateHUD();
+                }
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Draw Environment Background Grid / Territory
+                ctx.fillStyle = colonyData.isUnderground ? '#1e1b18' : '#0f172a';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw Territory Ring
+                ctx.beginPath();
+                ctx.arc(nest.x, nest.y, 120 + colonyData.level * 30, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(34, 197, 94, 0.25)';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Draw Nest
+                ctx.beginPath();
+                ctx.arc(nest.x, nest.y, nest.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#15803d';
+                ctx.fill();
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = '#4ade80';
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 12px Outfit';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${colonyData.name} (Lv.${colonyData.level})`, nest.x, nest.y - 50);
+
+                // Draw Resources
+                resources.forEach(res => {
+                    ctx.beginPath();
+                    ctx.arc(res.x, res.y, 8, 0, Math.PI * 2);
+                    ctx.fillStyle = res.type === 'food' ? '#eab308' : '#38bdf8';
+                    ctx.fill();
+                });
+
+                // Draw Ants
+                ants.forEach(ant => {
+                    // Simple random wandering / harvesting AI
+                    ant.x += (Math.random() - 0.5) * 2;
+                    ant.y += (Math.random() - 0.5) * 2;
+
+                    ctx.beginPath();
+                    ctx.arc(ant.x, ant.y, 4, 0, Math.PI * 2);
+                    ctx.fillStyle = '#f97316';
+                    ctx.fill();
+                });
+
+                requestAnimationFrame(gameLoop);
+            }
+            gameLoop();
+        }
+    </script>
+</body>
+</html>
