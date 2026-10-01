@@ -3,1248 +3,1421 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Colony.io — 개미 왕국</title>
-    <!-- Tailwind CSS for modern styling and UI -->
+    <title>Abyss Walker: Infinite Action RPG</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Inter', 'Jua', sans-serif;
-            user-select: none;
+            font-family: 'Rajdhani', sans-serif;
+            background-color: #07090e;
+            color: #e2e8f0;
             overflow: hidden;
-            background-color: #1a1a2e;
-            color: #f0f0f0;
+            user-select: none;
         }
-        canvas {
-            display: block;
-            touch-action: none;
+        .font-cinzel {
+            font-family: 'Cinzel', serif;
         }
-        .retro-font {
-            font-family: 'Jua', sans-serif;
+        /* Neon glowing effects */
+        .neon-glow-cyan {
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.7), 0 0 20px rgba(6, 182, 212, 0.4);
         }
-        /* Custom scrollbars */
+        .neon-glow-purple {
+            text-shadow: 0 0 10px rgba(168, 85, 247, 0.7), 0 0 20px rgba(168, 85, 247, 0.4);
+        }
+        .neon-glow-gold {
+            text-shadow: 0 0 10px rgba(234, 179, 8, 0.8), 0 0 20px rgba(234, 179, 8, 0.5);
+        }
+        .neon-border-cyan {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.4), inset 0 0 15px rgba(6, 182, 212, 0.2);
+        }
+        .neon-border-purple {
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4), inset 0 0 15px rgba(168, 85, 247, 0.2);
+        }
+        /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 6px;
-            height: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: rgba(0,0,0,0.2);
+            background: #0f172a;
         }
         ::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.3);
+            background: #334155;
             border-radius: 3px;
         }
-        @keyframes pulseGlow {
-            0%, 100% { opacity: 0.8; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.03); }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
         }
-        .pulse-glow {
-            animation: pulseGlow 2s infinite ease-in-out;
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        .animate-pulse-glow {
+            animation: pulseGlow 2s infinite;
         }
     </style>
 </head>
-<body class="relative w-screen h-screen overflow-hidden bg-emerald-950">
+<body class="w-screen h-screen flex flex-col justify-between items-center relative select-none">
 
-    <!-- MAIN CANVAS -->
-    <canvas id="gameCanvas" class="absolute inset-0 w-full h-full z-0 cursor-crosshair"></canvas>
+    <div id="game-container" class="relative w-full h-full overflow-hidden bg-slate-950 flex justify-center items-center">
+        <canvas id="gameCanvas" class="absolute inset-0 block w-full h-full cursor-crosshair"></canvas>
 
-    <!-- UI OVERLAY CONTAINER -->
-    <div id="uiContainer" class="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between p-4">
-
-        <!-- TOP BAR: Status & Leaderboard -->
-        <div class="flex justify-between items-start w-full">
-            <!-- Left Top: Player Stats & Resources -->
-            <div id="playerHUD" class="pointer-events-auto bg-slate-900/80 backdrop-blur-md border border-emerald-500/40 p-4 rounded-2xl shadow-2xl text-white min-w-[280px]">
-                <div class="flex items-center justify-between mb-2 pb-2 border-b border-white/10">
-                    <span id="hudColonyName" class="retro-font text-xl text-emerald-400 flex items-center gap-2">
-                        <i class="fa-solid fa-chess-rook"></i> 내 개미 왕국
-                    </span>
-                    <span id="hudColonyLevel" class="bg-emerald-600 px-2 py-0.5 rounded-full text-xs font-bold retro-font">LV. 1</span>
-                </div>
-                <div class="grid grid-cols-2 gap-2 text-sm">
-                    <div class="bg-black/30 p-2 rounded-xl flex items-center gap-2">
-                        <span class="text-amber-400 text-lg">🍎</span>
-                        <div>
-                            <div class="text-[10px] text-slate-400">식량 (FOOD)</div>
-                            <div id="hudFood" class="font-bold text-amber-200">50 / 300</div>
-                        </div>
+        <!-- HUD OVERLAY -->
+        <div id="hud-overlay" class="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 md:p-6 z-10 hidden">
+            <!-- Top Bar: Stats & Abyss Info -->
+            <div class="flex justify-between items-start w-full">
+                <!-- Player Health & Mana Bars -->
+                <div class="flex flex-col gap-2 bg-slate-900/80 backdrop-blur-md p-3 rounded-xl border border-slate-700/60 shadow-xl w-72 pointer-events-auto">
+                    <!-- HP Bar -->
+                    <div class="flex justify-between text-xs font-bold text-slate-300 mb-0.5">
+                        <span>HP <span id="hp-text" class="text-rose-400 font-mono">100/100</span></span>
+                        <span id="level-display" class="text-cyan-400 font-cinzel">LV. 1</span>
                     </div>
-                    <div class="bg-black/30 p-2 rounded-xl flex items-center gap-2">
-                        <span class="text-emerald-400 text-lg">🐜</span>
-                        <div>
-                            <div class="text-[10px] text-slate-400">총 개미 수</div>
-                            <div id="hudAnts" class="font-bold text-emerald-200">3 / 20</div>
-                        </div>
+                    <div class="w-full bg-slate-950 h-3 rounded-full overflow-hidden p-0.5 border border-slate-800">
+                        <div id="hp-bar" class="bg-gradient-to-r from-rose-600 to-rose-400 h-full rounded-full transition-all duration-200" style="width: 100%;"></div>
                     </div>
-                    <div class="bg-black/30 p-2 rounded-xl flex items-center gap-2">
-                        <span class="text-yellow-400 text-lg">⭐</span>
-                        <div>
-                            <div class="text-[10px] text-slate-400">점수 (SCORE)</div>
-                            <div id="hudScore" class="font-bold text-yellow-200">0</div>
-                        </div>
+                    <!-- Mana Bar -->
+                    <div class="flex justify-between text-xs font-bold text-slate-300 mt-1 mb-0.5">
+                        <span>MANA</span>
+                        <span id="mana-text" class="text-cyan-400 font-mono">50/50</span>
                     </div>
-                    <div class="bg-black/30 p-2 rounded-xl flex items-center gap-2">
-                        <span class="text-cyan-400 text-lg">⏳</span>
-                        <div>
-                            <div class="text-[10px] text-slate-400">남은 시간</div>
-                            <div id="hudTimer" class="font-bold text-cyan-200">05:00</div>
-                        </div>
+                    <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden p-0.5 border border-slate-800">
+                        <div id="mana-bar" class="bg-gradient-to-r from-cyan-600 to-cyan-400 h-full rounded-full transition-all duration-200" style="width: 100%;"></div>
+                    </div>
+                    <!-- EXP Bar -->
+                    <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden mt-1 border border-slate-800">
+                        <div id="exp-bar" class="bg-gradient-to-r from-amber-500 to-amber-300 h-full transition-all duration-200" style="width: 0%;"></div>
                     </div>
                 </div>
-                <!-- Selection Details Box -->
-                <div id="selectionInfo" class="mt-3 pt-2 border-t border-white/10 text-xs text-slate-300 hidden">
-                    <span id="selectionText" class="text-emerald-300 font-semibold">선택됨: 0마리</span>
+
+                <!-- Abyss Info & Stage Counter -->
+                <div class="flex flex-col items-center bg-slate-900/80 backdrop-blur-md px-6 py-2 rounded-2xl border border-cyan-500/30 shadow-2xl pointer-events-auto">
+                    <span class="text-xs tracking-widest text-cyan-400 font-cinzel uppercase">Infinite Abyss</span>
+                    <h2 id="stage-title" class="text-xl md:text-2xl font-black font-cinzel text-white neon-glow-cyan">Floor 1</h2>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                        <span id="objective-text" class="text-xs font-bold text-slate-300">Monsters Remaining: 15</span>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Right Top: Survival Leaderboard -->
-            <div id="leaderboardHUD" class="pointer-events-auto bg-slate-900/80 backdrop-blur-md border border-indigo-500/40 p-3 rounded-2xl shadow-2xl text-white min-w-[200px]">
-                <div class="retro-font text-sm text-indigo-400 mb-2 flex items-center gap-1.5 border-b border-white/10 pb-1">
-                    <i class="fa-solid fa-trophy text-amber-400"></i> 생존 왕국 순위
-                </div>
-                <div id="leaderboardList" class="flex flex-col gap-1.5 text-xs">
-                    <!-- Populated dynamically -->
-                </div>
-            </div>
-        </div>
-
-        <!-- CENTER ALERTS / EVENT NOTIFICATIONS -->
-        <div id="notificationArea" class="flex flex-col items-center justify-center pointer-events-none gap-2">
-            <!-- Dynamic popups will appear here -->
-        </div>
-
-        <!-- BOTTOM CONTROLS & HUD -->
-        <div class="flex flex-col md:flex-row justify-between items-end w-full gap-4">
-            
-            <!-- Minimap (Bottom Right / Left on mobile) -->
-            <div class="pointer-events-auto bg-slate-900/80 backdrop-blur-md border border-slate-700 p-2 rounded-2xl shadow-2xl relative">
-                <canvas id="minimapCanvas" width="160" height="160" class="rounded-xl bg-slate-950 block"></canvas>
-                <div class="absolute bottom-3 left-3 text-[10px] text-slate-400 retro-font bg-black/60 px-1.5 py-0.5 rounded">미니맵</div>
-            </div>
-
-            <!-- Ant Production & Colony Upgrade UI (Bottom Center) -->
-            <div id="actionHUD" class="pointer-events-auto bg-slate-900/90 backdrop-blur-md border border-emerald-500/40 p-4 rounded-3xl shadow-2xl flex flex-wrap gap-3 items-center justify-center">
-                <!-- Worker Ant Button -->
-                <button onclick="game.spawnAnt('worker')" class="group relative flex flex-col items-center bg-slate-800 hover:bg-emerald-700/80 border border-emerald-600/50 p-2.5 rounded-2xl transition-all duration-200 active:scale-95 min-w-[75px]">
-                    <span class="text-2xl mb-1">🐜</span>
-                    <span class="retro-font text-xs text-white">일개미</span>
-                    <span class="text-[10px] text-amber-300 font-semibold mt-0.5"><i class="fa-solid fa-apple-whole text-[9px]"></i> 20</span>
-                    <span class="absolute -top-2 -right-2 bg-slate-700 text-slate-300 text-[9px] px-1.5 py-0.5 rounded-full border border-slate-600">부대 1</span>
-                </button>
-
-                <!-- Soldier Ant Button -->
-                <button onclick="game.spawnAnt('soldier')" class="group relative flex flex-col items-center bg-slate-800 hover:bg-rose-700/80 border border-rose-600/50 p-2.5 rounded-2xl transition-all duration-200 active:scale-95 min-w-[75px]">
-                    <span class="text-2xl mb-1">🪖</span>
-                    <span class="retro-font text-xs text-white">병정개미</span>
-                    <span class="text-[10px] text-amber-300 font-semibold mt-0.5"><i class="fa-solid fa-apple-whole text-[9px]"></i> 50</span>
-                    <span class="absolute -top-2 -right-2 bg-slate-700 text-slate-300 text-[9px] px-1.5 py-0.5 rounded-full border border-slate-600">부대 2</span>
-                </button>
-
-                <!-- Scout Ant Button -->
-                <button onclick="game.spawnAnt('scout')" class="group relative flex flex-col items-center bg-slate-800 hover:bg-sky-700/80 border border-sky-600/50 p-2.5 rounded-2xl transition-all duration-200 active:scale-95 min-w-[75px]">
-                    <span class="text-2xl mb-1">🕵️️</span>
-                    <span class="retro-font text-xs text-white">탐험개미</span>
-                    <span class="text-[10px] text-amber-300 font-semibold mt-0.5"><i class="fa-solid fa-apple-whole text-[9px]"></i> 40</span>
-                    <span class="absolute -top-2 -right-2 bg-slate-700 text-slate-300 text-[9px] px-1.5 py-0.5 rounded-full border border-slate-600">부대 3</span>
-                </button>
-
-                <div class="h-10 w-[1px] bg-white/20 mx-1"></div>
-
-                <!-- Upgrade Colony Button -->
-                <button onclick="game.upgradeColony()" id="upgradeBtn" class="flex flex-col items-center bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 border border-amber-400 p-2.5 rounded-2xl transition-all duration-200 active:scale-95 min-w-[110px] shadow-lg shadow-amber-900/30">
-                    <span class="text-2xl mb-1">🏰</span>
-                    <span class="retro-font text-xs text-white" id="upgradeTitle">개미집 업그레이드</span>
-                    <span id="upgradeCost" class="text-[10px] text-amber-100 font-bold mt-0.5"><i class="fa-solid fa-apple-whole text-[9px]"></i> 200 식량</span>
-                </button>
-            </div>
-
-            <!-- Quick Command Actions -->
-            <div class="pointer-events-auto bg-slate-900/80 backdrop-blur-md border border-slate-700 p-3 rounded-2xl shadow-2xl flex gap-2">
-                <button onclick="game.commandSelected('gather')" class="bg-slate-800 hover:bg-emerald-800 px-3 py-2 rounded-xl text-xs flex flex-col items-center gap-1 border border-emerald-600/30 transition-all">
-                    <i class="fa-solid fa-seedling text-emerald-400 text-sm"></i>
-                    <span>채집 명령</span>
-                </button>
-                <button onclick="game.commandSelected('return')" class="bg-slate-800 hover:bg-cyan-800 px-3 py-2 rounded-xl text-xs flex flex-col items-center gap-1 border border-cyan-600/30 transition-all">
-                    <i class="fa-solid fa-house-chimney text-cyan-400 text-sm"></i>
-                    <span>귀환 명령</span>
-                </button>
-            </div>
-
-        </div>
-
-    </div>
-
-    <!-- START SCREEN MODAL -->
-    <div id="startModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex flex-col items-center justify-center p-4">
-        <div class="max-w-md w-full bg-slate-900 border border-emerald-500/40 p-8 rounded-3xl shadow-2xl text-center relative overflow-hidden">
-            <div class="absolute -right-10 -top-10 text-9xl opacity-5 text-emerald-400 font-bold pointer-events-none">🐜</div>
-            
-            <div class="inline-block bg-emerald-500/20 text-emerald-400 px-4 py-1.5 rounded-full text-xs font-bold retro-font mb-3 tracking-wider">
-                HTML5 REAL-TIME .IO GAME
-            </div>
-            
-            <h1 class="retro-font text-5xl font-extrabold text-white mb-2 tracking-wide drop-shadow-lg">
-                Colony<span class="text-emerald-400">.io</span>
-            </h1>
-            <p class="text-slate-400 text-sm mb-6">나만의 개미 왕국을 건설하고 다른 왕국과 경쟁하여 최후의 승자가 되세요!</p>
-
-            <!-- Mode Selection -->
-            <div class="bg-black/40 p-4 rounded-2xl mb-6 border border-white/5 text-left">
-                <label class="block text-xs text-slate-400 retro-font mb-2">게임 모드 선택</label>
-                <div class="grid grid-cols-2 gap-3 mb-4">
-                    <button onclick="game.setDuration(5)" id="btnMode5" class="py-2.5 px-3 rounded-xl border border-emerald-500 bg-emerald-600/30 text-emerald-300 retro-font text-sm transition-all flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-bolt"></i> 5분 스피드 모드
+                <!-- Gold & Quick Menu -->
+                <div class="flex items-center gap-3 bg-slate-900/80 backdrop-blur-md px-4 py-3 rounded-xl border border-slate-700/60 shadow-xl pointer-events-auto">
+                    <div class="flex items-center gap-1.5 text-amber-400 font-bold font-mono">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.51-1.31c-.562-.649-1.413-1.076-2.353-1.253V5z" clip-rule="evenodd"/></svg>
+                        <span id="gold-display">0</span>
+                    </div>
+                    <button onclick="toggleInventory()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/40 rounded-lg text-xs font-bold transition-all shadow-md">
+                        Inventory (I)
                     </button>
-                    <button onclick="game.setDuration(10)" id="btnMode10" class="py-2.5 px-3 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 retro-font text-sm transition-all flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-hourglass-half"></i> 10분 클래식 모드
+                    <button onclick="toggleForge()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-500/40 rounded-lg text-xs font-bold transition-all shadow-md">
+                        Smithing (F)
                     </button>
                 </div>
+            </div>
 
-                <label class="block text-xs text-slate-400 retro-font mb-2">AI 난이도 설정</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button onclick="game.setDifficulty('easy')" id="btnDiffEasy" class="py-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 text-xs font-bold transition-all">EASY</button>
-                    <button onclick="game.setDifficulty('normal')" id="btnDiffNormal" class="py-2 rounded-lg border border-emerald-500 bg-emerald-600/30 text-emerald-300 text-xs font-bold transition-all">NORMAL</button>
-                    <button onclick="game.setDifficulty('hard')" id="btnDiffHard" class="py-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 text-xs font-bold transition-all">HARD</button>
+            <!-- Bottom Bar: Skills & Controls -->
+            <div class="flex justify-between items-end w-full">
+                <!-- Controls Reminder -->
+                <div class="bg-slate-900/80 backdrop-blur-md px-4 py-2.5 rounded-xl border border-slate-700/60 text-xs text-slate-400 space-y-1">
+                    <p><span class="text-cyan-400 font-bold">W, A, S, D</span> : Move</p>
+                    <p><span class="text-cyan-400 font-bold">Left Click</span> : Attack Combo</p>
+                    <p><span class="text-cyan-400 font-bold">Space</span> : Dash (I-Frame)</p>
+                    <p><span class="text-cyan-400 font-bold">1 / 2</span> : Skills (Slash Wave / Meteor Strike)</p>
+                </div>
+
+                <!-- Action Skills -->
+                <div class="flex items-center gap-3">
+                    <!-- Skill 1 -->
+                    <div class="relative flex flex-col items-center">
+                        <div id="skill-1-cd" class="absolute inset-0 bg-slate-950/80 rounded-xl flex items-center justify-center text-xs font-bold text-white hidden">0.0s</div>
+                        <div class="w-14 h-14 bg-slate-900/90 border-2 border-cyan-500/60 rounded-xl flex flex-col items-center justify-center shadow-lg relative">
+                            <span class="text-cyan-400 font-bold text-sm">Q</span>
+                            <span class="text-[10px] text-slate-400">Slash</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 mt-1">Key: 1</span>
+                    </div>
+                    <!-- Skill 2 -->
+                    <div class="relative flex flex-col items-center">
+                        <div id="skill-2-cd" class="absolute inset-0 bg-slate-950/80 rounded-xl flex items-center justify-center text-xs font-bold text-white hidden">0.0s</div>
+                        <div class="w-14 h-14 bg-slate-900/90 border-2 border-purple-500/60 rounded-xl flex flex-col items-center justify-center shadow-lg relative">
+                            <span class="text-purple-400 font-bold text-sm">W</span>
+                            <span class="text-[10px] text-slate-400">Meteor</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 mt-1">Key: 2</span>
+                    </div>
+                    <!-- Dash Slot -->
+                    <div class="relative flex flex-col items-center">
+                        <div id="dash-cd" class="absolute inset-0 bg-slate-950/80 rounded-xl flex items-center justify-center text-xs font-bold text-white hidden">0.0s</div>
+                        <div class="w-14 h-14 bg-slate-900/90 border-2 border-amber-500/60 rounded-xl flex flex-col items-center justify-center shadow-lg relative">
+                            <span class="text-amber-400 font-bold text-sm">SPC</span>
+                            <span class="text-[10px] text-slate-400">Dash</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 mt-1">Space</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN MENU -->
+        <div id="menu-screen" class="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col justify-between z-30 p-6 md:p-10">
+            <!-- TOP-LEFT: Character Info & Editable Name -->
+            <div class="flex items-center gap-4 bg-slate-900/80 backdrop-blur-md p-4 rounded-2xl border border-cyan-500/30 shadow-2xl w-fit">
+                <!-- Round Character Skin Portrait Preview -->
+                <div class="relative w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-600/20 border-2 border-cyan-400 flex items-center justify-center shadow-lg shadow-cyan-500/20 overflow-hidden flex-shrink-0">
+                    <canvas id="home-skin-canvas" width="60" height="60" class="w-full h-full"></canvas>
+                    <div class="absolute bottom-0 inset-x-0 bg-slate-950/70 text-[9px] text-center text-cyan-300 font-bold py-0.5">SKIN</div>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-[10px] uppercase tracking-widest text-slate-400 font-cinzel">Abyss Walker</span>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <input id="player-name-input" type="text" value="Arthur" onchange="updatePlayerName(this.value)" class="bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-white font-cinzel font-bold text-base w-32 focus:outline-none focus:border-cyan-400 transition-colors" title="Click to rename hero">
+                        <span class="text-xs text-cyan-400 font-mono" id="home-level-label">LV.1</span>
+                    </div>
+                    <span class="text-xs text-slate-400 mt-1 font-mono" id="home-current-sword">Weapon: Rusty Blade</span>
                 </div>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="flex flex-col gap-3">
-                <button onclick="game.startGame()" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white retro-font text-xl rounded-2xl shadow-xl shadow-emerald-900/40 transition-all transform active:scale-95 flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-play"></i> 게임 시작 (PLAY)
+            <!-- CENTER: Title & Quick Shop Hub -->
+            <div class="flex flex-col items-center text-center max-w-4xl mx-auto w-full my-auto py-4">
+                <span class="text-cyan-400 font-cinzel tracking-widest text-xs uppercase mb-1 block neon-glow-cyan">Hardcore 2D Action RPG</span>
+                <h1 class="text-4xl md:text-6xl font-black font-cinzel text-white mb-2 tracking-wider neon-glow-cyan">ABYSS WALKER</h1>
+                <p class="text-slate-400 text-xs md:text-sm mb-6 max-w-xl">
+                    Descend into the endless abyss, vanquish monstrous hordes, and arm yourself with legendary equipment from the Armory Shop.
+                </p>
+
+                <!-- HOME STATS & SHOP TABS -->
+                <div class="w-full bg-slate-900/90 border border-slate-800 rounded-2xl p-4 backdrop-blur-md shadow-2xl flex flex-col gap-4">
+                    <!-- Stats summary row -->
+                    <div class="grid grid-cols-3 gap-2 pb-3 border-b border-slate-800 text-left">
+                        <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+                            <span class="text-[9px] text-slate-400 uppercase tracking-wider block">Best Floor</span>
+                            <span id="home-best-floor" class="text-base font-bold font-mono text-cyan-400">Floor 1</span>
+                        </div>
+                        <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+                            <span class="text-[9px] text-slate-400 uppercase tracking-wider block">Total Kills</span>
+                            <span id="home-total-kills" class="text-base font-bold font-mono text-purple-400">0</span>
+                        </div>
+                        <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+                            <span class="text-[9px] text-slate-400 uppercase tracking-wider block">Treasures</span>
+                            <span id="home-total-gold" class="text-base font-bold font-mono text-amber-400">0 G</span>
+                        </div>
+                    </div>
+
+                    <!-- Shop Section -->
+                    <div class="flex flex-col gap-2">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 font-cinzel flex items-center gap-1.5">
+                                <span>🛒 Abyss Armory Shop</span>
+                            </h3>
+                            <span class="text-xs text-slate-400 font-mono">Gold: <strong id="shop-gold-display" class="text-amber-400">0</strong> G</span>
+                        </div>
+                        <div id="shop-items-container" class="grid grid-cols-1 sm:grid-cols-3 gap-3 max-h-52 overflow-y-auto pr-1">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOTTOM-RIGHT: Play & How to Play Buttons -->
+            <div class="flex justify-end items-center gap-4 w-full">
+                <button onclick="toggleHowToPlay()" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold font-cinzel rounded-xl shadow-lg border border-slate-700 transition-all text-sm">
+                    How To Play
                 </button>
-                <button onclick="game.openHowToPlay()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 retro-font text-sm rounded-2xl border border-slate-700 transition-all flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-circle-question text-emerald-400"></i> 게임 방법 (HOW TO PLAY)
+                <button onclick="startGame()" class="px-8 py-3.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold font-cinzel rounded-xl shadow-lg shadow-cyan-500/30 border border-cyan-400 transition-all transform hover:-translate-y-0.5 text-base">
+                    Enter The Abyss
                 </button>
             </div>
         </div>
-    </div>
 
-    <!-- HOW TO PLAY MODAL -->
-    <div id="howToPlayModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl hidden flex items-center justify-center p-4">
-        <div class="max-w-lg w-full bg-slate-900 border border-emerald-500/40 p-6 rounded-3xl shadow-2xl text-slate-200">
-            <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-3">
-                <h2 class="retro-font text-xl text-emerald-400 flex items-center gap-2">
-                    <i class="fa-solid fa-book-open"></i> Colony.io 가이드
-                </h2>
-                <button onclick="game.closeHowToPlay()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="space-y-4 text-sm max-h-[60vh] overflow-y-auto pr-2">
-                <div class="bg-black/30 p-3 rounded-2xl border border-white/5">
-                    <div class="font-bold text-emerald-300 mb-1 flex items-center gap-2"><i class="fa-solid fa-crosshairs"></i> 조작법</div>
-                    <ul class="list-disc list-inside space-y-1 text-slate-300 text-xs">
-                        <li><b>WASD / 방향키</b>: 카메라 이동</li>
-                        <li><b>마우스 좌클릭 / 드래그</b>: 개미 선택 (다중 선택 가능)</li>
-                        <li><b>마우스 우클릭</b>: 선택한 개미 이동, 자원 채집 또는 적 공격 명령</li>
-                        <li><b>숫자키 (1, 2, 3)</b>: 일개미(1), 병정개미(2), 탐험개미(3) 부대 빠른 선택</li>
-                    </ul>
+        <!-- HOW TO PLAY MODAL -->
+        <div id="howto-modal" class="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-40 hidden p-4">
+            <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-lg w-full shadow-2xl relative">
+                <h2 class="text-2xl font-black font-cinzel text-cyan-400 mb-4 neon-glow-cyan">How To Play</h2>
+                <div class="space-y-3 text-sm text-slate-300">
+                    <p><strong class="text-white">Movement:</strong> Use <span class="text-cyan-400">W, A, S, D</span> to navigate the dungeon arenas.</p>
+                    <p><strong class="text-white">Combat Combo:</strong> Left-click repeatedly to perform a 3-hit melee combo. The 3rd hit deals massive AoE damage.</p>
+                    <p><strong class="text-white">Dash & I-Frames:</strong> Press <span class="text-cyan-400">Spacebar</span> to dash quickly through enemy attacks with complete invulnerability.</p>
+                    <p><strong class="text-white">Active Skills:</strong> Press <span class="text-cyan-400">1</span> for Slash Wave (ranged beam) and <span class="text-cyan-400">2</span> for Meteor Strike (devastating AOE).</p>
+                    <p><strong class="text-white">Shop & Armory:</strong> Buy new swords and armor with gold earned from abyss runs before entering.</p>
                 </div>
-                <div class="bg-black/30 p-3 rounded-2xl border border-white/5">
-                    <div class="font-bold text-amber-300 mb-1 flex items-center gap-2"><i class="fa-solid fa-seedling"></i> 자원 & 개미 생산</div>
-                    <ul class="list-disc list-inside space-y-1 text-slate-300 text-xs">
-                        <li>과일🍎, 🍪, 🌿, 물💧을 채집하여 식량을 모으세요.</li>
-                        <li>일개미는 자원을 채집하고, 병정개미는 왕국을 방어 및 공격합니다.</li>
-                        <li>탐험개미는 넓은 시야로 희귀 자원💎을 찾습니다.</li>
-                        <li>여왕개미가 사망하면 패배하므로 보호해야 합니다!</li>
-                    </ul>
+                <div class="mt-6 flex justify-end">
+                    <button onclick="toggleHowToPlay()" class="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg">Close</button>
                 </div>
-                <div class="bg-black/30 p-3 rounded-2xl border border-white/5">
-                    <div class="font-bold text-cyan-300 mb-1 flex items-center gap-2"><i class="fa-solid fa-chess-rook"></i> 승리 조건</div>
-                    <p class="text-slate-300 text-xs leading-relaxed">
-                        다른 모든 적 AI 왕국의 여왕개미를 제거하거나, 제한 시간 종료 시 가장 높은 점수를 달성하면 승리합니다!
-                    </p>
-                </div>
-            </div>
-            <div class="mt-6 text-center">
-                <button onclick="game.closeHowToPlay()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white retro-font rounded-xl shadow-lg transition-all">확인 완료</button>
             </div>
         </div>
-    </div>
 
-    <!-- GAME OVER / VICTORY MODAL -->
-    <div id="gameOverModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl hidden flex items-center justify-center p-4">
-        <div class="max-w-md w-full bg-slate-900 border border-emerald-500/40 p-8 rounded-3xl shadow-2xl text-center">
-            <div id="gameOverIcon" class="text-6xl mb-3">🏆</div>
-            <h2 id="gameOverTitle" class="retro-font text-3xl text-white mb-2">게임 승리!</h2>
-            <p id="gameOverDesc" class="text-slate-400 text-sm mb-6">모든 적 왕국을 정복하고 개미 왕국을 통일했습니다!</p>
+        <!-- LEVEL UP / PERK SELECTION MODAL -->
+        <div id="perk-modal" class="absolute inset-0 bg-slate-950/90 backdrop-blur-lg flex flex-col items-center justify-center z-40 hidden p-6">
+            <h2 class="text-3xl font-black font-cinzel text-amber-400 mb-2 neon-glow-gold">LEVEL UP!</h2>
+            <p class="text-slate-300 text-sm mb-8">Choose one blessing to empower your hero for the abyss:</p>
             
-            <div class="bg-black/40 p-4 rounded-2xl mb-6 text-left space-y-2 text-sm border border-white/5">
-                <div class="flex justify-between"><span class="text-slate-400">최종 점수:</span> <span id="finalScore" class="font-bold text-yellow-300">0</span></div>
-                <div class="flex justify-between"><span class="text-slate-400">수집한 식량:</span> <span id="finalFood" class="font-bold text-amber-300">0</span></div>
-                <div class="flex justify-between"><span class="text-slate-400">생산한 개미:</span> <span id="finalAnts" class="font-bold text-emerald-300">0</span></div>
+            <div id="perk-container" class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl w-full">
+                <!-- Dynamically injected perks -->
+            </div>
+        </div>
+
+        <!-- INVENTORY MODAL -->
+        <div id="inventory-modal" class="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-40 hidden p-4">
+            <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-2xl w-full shadow-2xl relative flex flex-col max-h-[90vh]">
+                <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
+                    <h2 class="text-2xl font-black font-cinzel text-cyan-400 neon-glow-cyan">Hero Inventory</h2>
+                    <button onclick="toggleInventory()" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto pr-1">
+                    <!-- Equipped Gear -->
+                    <div class="space-y-3">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Equipped Items</h3>
+                        <div id="equipped-list" class="space-y-2">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                    <!-- Inventory Stash -->
+                    <div class="space-y-3">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Stash Bag</h3>
+                        <div id="stash-list" class="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FORGE / SMITHING MODAL -->
+        <div id="forge-modal" class="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-40 hidden p-4">
+            <div class="bg-slate-900 border border-purple-500/50 rounded-2xl p-6 max-w-xl w-full shadow-2xl relative flex flex-col">
+                <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
+                    <h2 class="text-2xl font-black font-cinzel text-purple-400 neon-glow-purple">Abyssal Forge</h2>
+                    <button onclick="toggleForge()" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+                </div>
+                
+                <p class="text-xs text-slate-400 mb-4">Enhance your equipped gear using gold. Higher enhancements grant immense power!</p>
+                
+                <div id="forge-item-display" class="bg-slate-950 p-4 rounded-xl border border-slate-800 mb-6 flex flex-col items-center text-center">
+                    <!-- Selected forge item info -->
+                </div>
+
+                <div class="flex gap-3 justify-end">
+                    <button onclick="upgradeEquipment()" class="px-6 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/30">
+                        Upgrade Item (<span id="upgrade-cost">100</span> Gold)
+                    </button>
+                    <button onclick="toggleForge()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- GAME OVER / VICTORY MODAL -->
+        <div id="gameover-modal" class="absolute inset-0 bg-slate-950/90 backdrop-blur-lg flex flex-col items-center justify-center z-50 hidden p-6 text-center">
+            <h1 id="gameover-title" class="text-5xl md:text-6xl font-black font-cinzel text-rose-500 mb-3 neon-glow-cyan">DEFEATED</h1>
+            <p id="gameover-desc" class="text-slate-300 text-base mb-6">You fell in the depths of the abyss. The shadows claim another soul.</p>
+            
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl mb-6 w-full max-w-md text-left space-y-2">
+                <div class="flex justify-between text-sm"><span class="text-slate-400">Floors Cleared:</span> <span id="stat-floors" class="text-white font-bold font-mono">0</span></div>
+                <div class="flex justify-between text-sm"><span class="text-slate-400">Monsters Slain:</span> <span id="stat-kills" class="text-white font-bold font-mono">0</span></div>
+                <div class="flex justify-between text-sm"><span class="text-slate-400">Gold Collected:</span> <span id="stat-gold" class="text-amber-400 font-bold font-mono">0</span></div>
             </div>
 
-            <button onclick="location.reload()" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white retro-font text-lg rounded-2xl shadow-xl shadow-emerald-900/40 transition-all">
-                다시 하기 (RESTART)
+            <button onclick="restartGame()" class="px-8 py-4 bg-cyan-600 hover:bg-cyan-500 text-white font-bold font-cinzel rounded-xl shadow-lg shadow-cyan-500/30 border border-cyan-400">
+                Return to Hub
             </button>
         </div>
+
     </div>
 
     <script>
-        const CONFIG = {
-            mapWidth: 3000,
-            mapHeight: 3000,
-            antTypes: {
-                worker: { name: '일개미', cost: 20, hp: 30, attack: 5, speed: 2.2, carry: 25, range: 15, color: '#34d399', icon: '🐜' },
-                soldier: { name: '병정개미', cost: 50, hp: 80, attack: 18, speed: 1.8, carry: 0, range: 20, color: '#f87171', icon: '🪖' },
-                scout: { name: '탐험개미', cost: 40, hp: 25, attack: 4, speed: 3.2, carry: 10, range: 15, color: '#38bdf8', icon: '🕵️' },
-                queen: { name: '여왕개미', cost: 0, hp: 300, attack: 0, speed: 0, carry: 0, range: 0, color: '#fbbf24', icon: '👑' }
-            },
-            colonyLevels: [
-                { level: 1, cost: 0, maxAnts: 20, radius: 120, capacity: 300, prodSpeed: 1.0 },
-                { level: 2, cost: 200, maxAnts: 35, radius: 180, capacity: 600, prodSpeed: 0.8 },
-                { level: 3, cost: 500, maxAnts: 55, radius: 240, capacity: 1000, prodSpeed: 0.6 },
-                { level: 4, cost: 1000, maxAnts: 80, radius: 320, capacity: 1600, prodSpeed: 0.4 },
-                { level: 5, cost: 2000, maxAnts: 120, radius: 420, capacity: 2500, prodSpeed: 0.3 }
-            ],
-            resourceTypes: {
-                apple: { name: '사과', value: 30, color: '#ef4444', radius: 14, icon: '🍎' },
-                cookie: { name: '쿠키', value: 50, color: '#d97706', radius: 16, icon: '🍪' },
-                plant: { name: '식물', value: 20, color: '#10b981', radius: 12, icon: '🌿' },
-                water: { name: '물방울', value: 40, color: '#0ea5e9', radius: 14, icon: '💧' },
-                rare: { name: '희귀 자원', value: 150, color: '#a855f7', radius: 18, icon: '💎' }
+        // --- SOUND ENGINE (Web Audio API Synthesizer) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (!audioCtx) return;
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
             }
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'hit') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'slash') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'dash') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(200, now + 0.2);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'skill') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(900, now + 0.3);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'levelup') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.setValueAtTime(600, now + 0.1);
+                osc.frequency.setValueAtTime(800, now + 0.2);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            } else if (type === 'buy') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(500, now);
+                osc.frequency.exponentialRampToValueAtTime(1000, now + 0.2);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            }
+        }
+
+        // --- GAME DEFINITIONS & SHOP DATABASE ---
+        const SWORDS_DATABASE = [
+            { id: 'rusty', name: 'Rusty Blade', atk: 10, color: '#94a3b8', desc: 'A worn iron blade.', price: 0, owned: true },
+            { id: 'steel', name: 'Knight Steel Sword', atk: 25, color: '#38bdf8', desc: 'Standard issue disciplined edge.', price: 300, owned: false },
+            { id: 'flame', name: 'Ignis Flame Brand', atk: 55, color: '#f97316', desc: 'Infused with abyssal fire.', price: 1200, owned: false },
+            { id: 'frost', name: 'Glacial FrostEdge', atk: 95, color: '#06b6d4', desc: 'Freezes foes on impact.', price: 3500, owned: false },
+            { id: 'celestial', name: 'Celestial God-Slayer', atk: 180, color: '#a855f7', desc: 'Forged from fallen starlight.', price: 10000, owned: false }
+        ];
+
+        const ARMORS_DATABASE = [
+            { id: 'cloth', name: 'Cloth Tunic', def: 5, hpBonus: 0, color: '#64748b', desc: 'Simple cotton rags.', price: 0, owned: true },
+            { id: 'leather', name: 'Hardened Leather', def: 15, hpBonus: 50, color: '#d97706', desc: 'Sturdy hide protection.', price: 250, owned: false },
+            { id: 'plate', name: 'Steel Plate Armor', def: 35, hpBonus: 150, color: '#475569', desc: 'Heavy knight plating.', price: 1000, owned: false },
+            { id: 'dragon', name: 'Dragon Scale Armor', def: 70, hpBonus: 350, color: '#ef4444', desc: 'Impenetrable beast scales.', price: 3000, owned: false },
+            { id: 'celestial_arm', name: 'Aegis Divine Armor', def: 130, hpBonus: 700, color: '#eab308', desc: 'Radiant celestial blessing.', price: 8500, owned: false }
+        ];
+
+        let playerProfile = {
+            name: 'Arthur',
+            gold: 500,
+            equippedSword: 'rusty',
+            equippedArmor: 'cloth',
+            unlockedSwords: ['rusty'],
+            unlockedArmors: ['cloth'],
+            bestFloor: 1,
+            totalKills: 0
         };
 
-        class Resource {
-            constructor(x, y, type) {
-                this.x = x;
-                this.y = y;
-                this.type = type;
-                const def = CONFIG.resourceTypes[type];
-                this.name = def.name;
-                this.value = def.value;
-                this.color = def.color;
-                this.radius = def.radius;
-                this.icon = def.icon;
-                this.maxAmount = def.value;
-                this.alive = true;
-            }
+        // --- CANVAS & GAME VARIABLES ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
-            draw(ctx) {
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.shadowColor = this.color;
-                ctx.shadowBlur = 10;
-                ctx.fill();
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = '#ffffff';
-                ctx.stroke();
-                ctx.restore();
+        let gameState = 'MENU'; // MENU, PLAYING, PERK, GAMEOVER
+        let screenShakeTime = 0;
+        let screenShakeIntensity = 0;
+        let hitStopFrames = 0;
 
-                // Draw icon or text
-                ctx.font = '14px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(this.icon, this.x, this.y);
+        let camera = { x: 0, y: 0 };
+        const worldWidth = 3000;
+        const worldHeight = 3000;
+
+        let keys = {};
+        let mouse = { x: 0, y: 0, worldX: 0, worldY: 0, down: false, clicked: false };
+
+        let stats = {
+            floorsCleared: 0,
+            monstersSlain: 0,
+            goldCollected: 0
+        };
+
+        let player = {
+            x: worldWidth / 2,
+            y: worldHeight / 2,
+            radius: 20,
+            speed: 4.5,
+            hp: 100,
+            maxHp: 100,
+            mana: 50,
+            maxMana: 50,
+            exp: 0,
+            maxExp: 100,
+            level: 1,
+            atk: 15,
+            def: 5,
+            critRate: 0.1,
+            critDmg: 1.5,
+            lifesteal: 0,
+            attackSpeed: 1,
+            facing: { x: 1, y: 0 },
+            isDashing: false,
+            dashTimer: 0,
+            dashCooldown: 0,
+            comboStep: 0,
+            comboTimer: 0,
+            attackCooldown: 0
+        };
+
+        let currentFloor = 1;
+        let enemiesRemaining = 15;
+        let activeBoss = null;
+        let entities = [];
+        let particles = [];
+        let floatingTexts = [];
+        let droppedGoldList = [];
+        let inventoryStash = [];
+        let equippedGear = {
+            weapon: { name: 'Rusty Sword', type: 'weapon', atk: 12, enhance: 0, rarity: 'Common' },
+            armor: { name: 'Leather Vest', type: 'armor', def: 5, enhance: 0, rarity: 'Common' }
+        };
+
+        // --- SKILL COOLDOWNS ---
+        let skill1CD = 0;
+        let skill2CD = 0;
+
+        // --- HOME SCREEN RENDER & SHOP ---
+        function updatePlayerName(val) {
+            if (val.trim() !== '') {
+                playerProfile.name = val.trim();
             }
         }
 
-        class Obstacle {
-            constructor(x, y, radius, type) {
-                this.x = x;
-                this.y = y;
-                this.radius = radius;
-                this.type = type; // rock, tree, waterpool
+        function renderHomeSkinPreview() {
+            const sc = document.getElementById('home-skin-canvas');
+            if (!sc) return;
+            const sctx = sc.getContext('2d');
+            sctx.clearRect(0, 0, sc.width, sc.height);
+            
+            // Draw a cute round character portrait preview
+            sctx.save();
+            sctx.translate(sc.width / 2, sc.height / 2);
+            // Body glow
+            sctx.fillStyle = 'rgba(6, 182, 212, 0.3)';
+            sctx.beginPath();
+            sctx.arc(0, 0, 24, 0, Math.PI * 2);
+            sctx.fill();
+
+            // Head / Body
+            sctx.fillStyle = '#38bdf8';
+            sctx.beginPath();
+            sctx.arc(0, 0, 18, 0, Math.PI * 2);
+            sctx.fill();
+            sctx.strokeStyle = '#0e7490';
+            sctx.lineWidth = 2;
+            sctx.stroke();
+
+            // Visor / Eyes
+            sctx.fillStyle = '#0f172a';
+            sctx.fillRect(-8, -4, 16, 6);
+
+            // Tiny sword icon next to it
+            sctx.fillStyle = '#f59e0b';
+            sctx.fillRect(8, 6, 12, 3);
+            sctx.restore();
+        }
+
+        function updateHomeScreenUI() {
+            document.getElementById('shop-gold-display').innerText = playerProfile.gold;
+            document.getElementById('home-best-floor').innerText = `Floor ${playerProfile.bestFloor}`;
+            document.getElementById('home-total-kills').innerText = playerProfile.totalKills;
+            document.getElementById('home-total-gold').innerText = `${playerProfile.gold} G`;
+            document.getElementById('home-level-label').innerText = `LV.${player.level}`;
+
+            const currentSwordObj = SWORDS_DATABASE.find(s => s.id === playerProfile.equippedSword);
+            document.getElementById('home-current-sword').innerText = `Weapon: ${currentSwordObj ? currentSwordObj.name : 'Rusty Blade'}`;
+
+            renderShopItems();
+            renderHomeSkinPreview();
+        }
+
+        function renderShopItems() {
+            const container = document.getElementById('shop-items-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            // Render Swords
+            SWORDS_DATABASE.forEach(sword => {
+                const isOwned = playerProfile.unlockedSwords.includes(sword.id);
+                const isEquipped = playerProfile.equippedSword === sword.id;
+
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-xl border flex flex-col justify-between ${isEquipped ? 'bg-cyan-950/40 border-cyan-500/60' : 'bg-slate-950/70 border-slate-800'}`;
+                div.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-cinzel font-bold text-xs" style="color: ${sword.color};">${sword.name}</span>
+                            <span class="text-[10px] font-mono text-cyan-400">+${sword.atk} ATK</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mb-2">${sword.desc}</p>
+                    </div>
+                    <div class="flex justify-between items-center mt-auto">
+                        <span class="text-xs font-mono text-amber-400">${sword.price} G</span>
+                        ${isEquipped ? '<span class="text-[10px] text-cyan-400 font-bold px-2 py-0.5 bg-cyan-950 rounded">Equipped</span>' : 
+                          isOwned ? `<button onclick="equipSword('${sword.id}')" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-300 rounded text-[10px] font-bold">Equip</button>` :
+                          `<button onclick="buySword('${sword.id}')" class="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] font-bold shadow">Buy</button>`}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+
+            // Render Armors
+            ARMORS_DATABASE.forEach(armor => {
+                const isOwned = playerProfile.unlockedArmors.includes(armor.id);
+                const isEquipped = playerProfile.equippedArmor === armor.id;
+
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-xl border flex flex-col justify-between ${isEquipped ? 'bg-purple-950/40 border-purple-500/60' : 'bg-slate-950/70 border-slate-800'}`;
+                div.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-cinzel font-bold text-xs" style="color: ${armor.color};">${armor.name}</span>
+                            <span class="text-[10px] font-mono text-purple-400">+${armor.def} DEF</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mb-2">${armor.desc}</p>
+                    </div>
+                    <div class="flex justify-between items-center mt-auto">
+                        <span class="text-xs font-mono text-amber-400">${armor.price} G</span>
+                        ${isEquipped ? '<span class="text-[10px] text-purple-400 font-bold px-2 py-0.5 bg-purple-950 rounded">Equipped</span>' : 
+                          isOwned ? `<button onclick="equipArmor('${armor.id}')" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-purple-300 rounded text-[10px] font-bold">Equip</button>` :
+                          `<button onclick="buyArmor('${armor.id}')" class="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] font-bold shadow">Buy</button>`}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function buySword(id) {
+            const sword = SWORDS_DATABASE.find(s => s.id === id);
+            if (!sword) return;
+            if (playerProfile.gold >= sword.price) {
+                playerProfile.gold -= sword.price;
+                playerProfile.unlockedSwords.push(id);
+                playerProfile.equippedSword = id;
+                playSound('buy');
+                updateHomeScreenUI();
+            }
+        }
+
+        function equipSword(id) {
+            if (playerProfile.unlockedSwords.includes(id)) {
+                playerProfile.equippedSword = id;
+                playSound('slash');
+                updateHomeScreenUI();
+            }
+        }
+
+        function buyArmor(id) {
+            const armor = ARMORS_DATABASE.find(a => a.id === id);
+            if (!armor) return;
+            if (playerProfile.gold >= armor.price) {
+                playerProfile.gold -= armor.price;
+                playerProfile.unlockedArmors.push(id);
+                playerProfile.equippedArmor = id;
+                playSound('buy');
+                updateHomeScreenUI();
+            }
+        }
+
+        function equipArmor(id) {
+            if (playerProfile.unlockedArmors.includes(id)) {
+                playerProfile.equippedArmor = id;
+                playSound('dash');
+                updateHomeScreenUI();
+            }
+        }
+
+        // --- GAME INITIALIZATION & LOOP ---
+        function startGame() {
+            document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('hud-overlay').classList.remove('hidden');
+
+            gameState = 'PLAYING';
+            currentFloor = 1;
+            stats.floorsCleared = 0;
+            stats.monstersSlain = 0;
+            stats.goldCollected = 0;
+
+            // Apply selected sword/armor stats to player
+            const sObj = SWORDS_DATABASE.find(s => s.id === playerProfile.equippedSword) || SWORDS_DATABASE[0];
+            const aObj = ARMORS_DATABASE.find(a => a.id === playerProfile.equippedArmor) || ARMORS_DATABASE[0];
+
+            player.maxHp = 100 + aObj.hpBonus;
+            player.hp = player.maxHp;
+            player.atk = 15 + sObj.atk;
+            player.def = 5 + aObj.def;
+
+            player.x = worldWidth / 2;
+            player.y = worldHeight / 2;
+            entities = [];
+            particles = [];
+            floatingTexts = [];
+            droppedGoldList = [];
+
+            spawnFloorMonsters();
+        }
+
+        function restartGame() {
+            document.getElementById('gameover-modal').classList.add('hidden');
+            document.getElementById('hud-overlay').classList.add('hidden');
+            document.getElementById('menu-screen').classList.remove('hidden');
+            gameState = 'MENU';
+            updateHomeScreenUI();
+        }
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // --- INPUT LISTENERS ---
+        window.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+            if (e.key === ' ' && gameState === 'PLAYING') {
+                e.preventDefault();
+                triggerDash();
+            }
+            if (e.key === '1' && gameState === 'PLAYING') triggerSkill1();
+            if (e.key === '2' && gameState === 'PLAYING') triggerSkill2();
+            if (e.key.toLowerCase() === 'i' && gameState === 'PLAYING') toggleInventory();
+            if (e.key.toLowerCase() === 'f' && gameState === 'PLAYING') toggleForge();
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            mouse.worldX = mouse.x - canvas.width / 2 + player.x;
+            mouse.worldY = mouse.y - canvas.height / 2 + player.y;
+        });
+
+        window.addEventListener('mousedown', (e) => {
+            if (e.button === 0 && gameState === 'PLAYING') {
+                mouse.down = true;
+                performAttack();
+            }
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (e.button === 0) mouse.down = false;
+        });
+
+        // --- GAMEPLAY MECHANICS & COMBAT ---
+        function triggerDash() {
+            if (player.dashCooldown <= 0 && !player.isDashing) {
+                player.isDashing = true;
+                player.dashTimer = 15; // frames of invulnerability
+                player.dashCooldown = 60; // 1 second cooldown
+                playSound('dash');
+
+                for (let i = 0; i < 8; i++) {
+                    particles.push({
+                        x: player.x,
+                        y: player.y,
+                        vx: (Math.random() - 0.5) * 6,
+                        vy: (Math.random() - 0.5) * 6,
+                        color: '#06b6d4',
+                        life: 20,
+                        maxLife: 20,
+                        size: 4
+                    });
+                }
+            }
+        }
+
+        function performAttack() {
+            if (player.attackCooldown > 0) return;
+            player.attackCooldown = 15;
+
+            // Determine attack angle towards mouse
+            const angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
+            player.facing.x = Math.cos(angle);
+            player.facing.y = Math.sin(angle);
+
+            player.comboStep = (player.comboStep % 3) + 1;
+            playSound('slash');
+
+            const range = player.comboStep === 3 ? 90 : 70;
+            const baseDmg = player.atk * (player.comboStep === 3 ? 1.8 : 1.0);
+
+            // Create slash visual arc
+            for (let i = -1; i <= 1; i += 0.5) {
+                particles.push({
+                    x: player.x + Math.cos(angle + i * 0.4) * 40,
+                    y: player.y + Math.sin(angle + i * 0.4) * 40,
+                    vx: Math.cos(angle) * 3,
+                    vy: Math.sin(angle) * 3,
+                    color: player.comboStep === 3 ? '#eab308' : '#38bdf8',
+                    life: 12,
+                    maxLife: 12,
+                    size: player.comboStep === 3 ? 8 : 5
+                });
             }
 
-            draw(ctx) {
-                ctx.save();
+            // Check enemy hits
+            entities.forEach(en => {
+                if (en.type === 'monster' || en.type === 'boss') {
+                    const dist = Math.hypot(en.x - player.x, en.y - player.y);
+                    if (dist < range + en.radius) {
+                        const isCrit = Math.random() < player.critRate;
+                        let finalDmg = Math.floor(baseDmg * (isCrit ? player.critDmg : 1));
+                        finalDmg = Math.max(1, finalDmg - en.def);
+
+                        en.hp -= finalDmg;
+                        en.hitFlash = 10;
+                        en.vx += Math.cos(angle) * 5;
+                        en.vy += Math.sin(angle) * 5;
+
+                        // Lifesteal
+                        if (player.lifesteal > 0) {
+                            player.hp = Math.min(player.maxHp, player.hp + finalDmg * player.lifesteal);
+                        }
+
+                        floatingTexts.push({
+                            x: en.x + (Math.random() - 0.5) * 20,
+                            y: en.y - en.radius - 10,
+                            text: isCrit ? `CRIT! ${finalDmg}` : `${finalDmg}`,
+                            color: isCrit ? '#eab308' : '#f87171',
+                            life: 30
+                        });
+
+                        // Hit-stop & Screen shake on crit
+                        if (isCrit) {
+                            hitStopFrames = 3;
+                            screenShakeTime = 10;
+                            screenShakeIntensity = 6;
+                        }
+
+                        // Blood particles
+                        for (let p = 0; p < 6; p++) {
+                            particles.push({
+                                x: en.x,
+                                y: en.y,
+                                vx: (Math.random() - 0.5) * 8,
+                                vy: (Math.random() - 0.5) * 8,
+                                color: '#ef4444',
+                                life: 25,
+                                maxLife: 25,
+                                size: 3
+                            });
+                        }
+                    }
+                }
+            });
+        }
+
+        function triggerSkill1() {
+            if (skill1CD > 0 || player.mana < 20) return;
+            player.mana -= 20;
+            skill1CD = 300; // 5 seconds
+            playSound('skill');
+
+            const angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
+            // Spawn Slash Wave Projectile
+            entities.push({
+                type: 'projectile',
+                x: player.x,
+                y: player.y,
+                vx: Math.cos(angle) * 12,
+                vy: Math.sin(angle) * 12,
+                radius: 18,
+                dmg: player.atk * 2.5,
+                color: '#38bdf8',
+                life: 60
+            });
+        }
+
+        function triggerSkill2() {
+            if (skill2CD > 0 || player.mana < 35) return;
+            player.mana -= 35;
+            skill2CD = 600; // 10 seconds
+            playSound('skill');
+
+            const targetX = mouse.worldX;
+            const targetY = mouse.worldY;
+
+            screenShakeTime = 20;
+            screenShakeIntensity = 10;
+
+            // Meteor impact AoE
+            setTimeout(() => {
+                for (let i = 0; i < 30; i++) {
+                    particles.push({
+                        x: targetX,
+                        y: targetY,
+                        vx: (Math.random() - 0.5) * 12,
+                        vy: (Math.random() - 0.5) * 12,
+                        color: '#f97316',
+                        life: 40,
+                        maxLife: 40,
+                        size: 6
+                    });
+                }
+
+                entities.forEach(en => {
+                    if (en.type === 'monster' || en.type === 'boss') {
+                        const dist = Math.hypot(en.x - targetX, en.y - targetY);
+                        if (dist < 120) {
+                            const dmg = Math.floor(player.atk * 4);
+                            en.hp -= dmg;
+                            floatingTexts.push({
+                                x: en.x,
+                                y: en.y - 20,
+                                text: `METEOR! ${dmg}`,
+                                color: '#fb923c',
+                                life: 40
+                            });
+                        }
+                    }
+                });
+            }, 400);
+        }
+
+        // --- SPAWNING & FLOOR MANAGEMENT ---
+        function spawnFloorMonsters() {
+            entities = entities.filter(e => e.type === 'gold' || e.type === 'portal');
+            enemiesRemaining = 10 + currentFloor * 3;
+
+            const isBossFloor = (currentFloor % 5 === 0);
+
+            if (isBossFloor) {
+                // Spawn Boss
+                const bossType = currentFloor >= 10 ? 'Abyssal Overlord' : 'Crypt Guardian';
+                entities.push({
+                    type: 'boss',
+                    name: bossType,
+                    x: player.x + 300,
+                    y: player.y,
+                    radius: 45,
+                    hp: 800 + currentFloor * 300,
+                    maxHp: 800 + currentFloor * 300,
+                    atk: 25 + currentFloor * 5,
+                    def: 10 + currentFloor * 2,
+                    speed: 2.2,
+                    vx: 0,
+                    vy: 0,
+                    attackTimer: 0,
+                    phase2: false,
+                    hitFlash: 0
+                });
+                document.getElementById('stage-title').innerText = `Floor ${currentFloor} - BOSS BATTLE`;
+            } else {
+                document.getElementById('stage-title').innerText = `Floor ${currentFloor}`;
+                for (let i = 0; i < enemiesRemaining; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const dist = 400 + Math.random() * 800;
+                    const types = ['melee', 'ranged', 'tank', 'exploder'];
+                    const chosenType = types[Math.floor(Math.random() * types.length)];
+
+                    entities.push({
+                        type: 'monster',
+                        subType: chosenType,
+                        x: player.x + Math.cos(angle) * dist,
+                        y: player.y + Math.sin(angle) * dist,
+                        radius: chosenType === 'tank' ? 26 : 18,
+                        hp: 40 + currentFloor * 15,
+                        maxHp: 40 + currentFloor * 15,
+                        atk: 10 + currentFloor * 3,
+                        def: 2 + Math.floor(currentFloor / 2),
+                        speed: chosenType === 'melee' ? 3 : chosenType === 'ranged' ? 2 : 2.5,
+                        vx: 0,
+                        vy: 0,
+                        shootTimer: 0,
+                        hitFlash: 0
+                    });
+                }
+            }
+        }
+
+        // --- UPDATE LOOP ---
+        function updateGame() {
+            if (gameState !== 'PLAYING') return;
+
+            if (hitStopFrames > 0) {
+                hitStopFrames--;
+                return;
+            }
+
+            // Cooldowns
+            if (player.dashCooldown > 0) player.dashCooldown--;
+            if (player.attackCooldown > 0) player.attackCooldown--;
+            if (skill1CD > 0) skill1CD--;
+            if (skill2CD > 0) skill2CD--;
+
+            // Regen mana slowly
+            if (player.mana < player.maxMana) {
+                player.mana = Math.min(player.maxMana, player.mana + 0.05);
+            }
+
+            // Player Movement
+            let dx = 0;
+            let dy = 0;
+            if (keys['w'] || keys['arrowup']) dy -= 1;
+            if (keys['s'] || keys['arrowdown']) dy += 1;
+            if (keys['a'] || keys['arrowleft']) dx -= 1;
+            if (keys['d'] || keys['arrowright']) dx += 1;
+
+            if (dx !== 0 && dy !== 0) {
+                dx *= 0.7071;
+                dy *= 0.7071;
+            }
+
+            const currentSpeed = player.isDashing ? player.speed * 3.5 : player.speed;
+            player.x += dx * currentSpeed;
+            player.y += dy * currentSpeed;
+
+            // Clamp to world bounds
+            player.x = Math.max(player.radius, Math.min(worldWidth - player.radius, player.x));
+            player.y = Math.max(player.radius, Math.min(worldHeight - player.radius, player.y));
+
+            if (player.isDashing) {
+                player.dashTimer--;
+                if (player.dashTimer <= 0) player.isDashing = false;
+            }
+
+            // Camera lerp
+            camera.x += (player.x - canvas.width / 2 - camera.x) * 0.1;
+            camera.y += (player.y - canvas.height / 2 - camera.y) * 0.1;
+
+            if (screenShakeTime > 0) screenShakeTime--;
+
+            // Update Entities
+            entities.forEach((en, idx) => {
+                if (en.hitFlash > 0) en.hitFlash--;
+
+                if (en.type === 'monster') {
+                    const angle = Math.atan2(player.y - en.y, player.x - en.x);
+                    en.x += Math.cos(angle) * en.speed;
+                    en.y += Math.sin(angle) * en.speed;
+
+                    // Attack player if close
+                    const dist = Math.hypot(player.x - en.x, player.y - en.y);
+                    if (dist < player.radius + en.radius && !player.isDashing) {
+                        const dmg = Math.max(1, en.atk - player.def);
+                        player.hp -= dmg;
+                        playSound('hit');
+                        // Knockback player
+                        player.x -= Math.cos(angle) * 15;
+                        player.y -= Math.sin(angle) * 15;
+                        screenShakeTime = 8;
+                        screenShakeIntensity = 4;
+
+                        floatingTexts.push({
+                            x: player.x,
+                            y: player.y - 20,
+                            text: `-${dmg}`,
+                            color: '#f43f5e',
+                            life: 25
+                        });
+
+                        if (player.hp <= 0) {
+                            triggerGameOver();
+                        }
+                    }
+                } else if (en.type === 'boss') {
+                    const angle = Math.atan2(player.y - en.y, player.x - en.x);
+                    // Phase 2 check
+                    if (en.hp < en.maxHp * 0.5 && !en.phase2) {
+                        en.phase2 = true;
+                        en.speed *= 1.4;
+                        en.atk *= 1.3;
+                        floatingTexts.push({ x: en.x, y: en.y - 50, text: 'ENRAGED PHASE!', color: '#ef4444', life: 60 });
+                    }
+
+                    en.x += Math.cos(angle) * en.speed;
+                    en.y += Math.sin(angle) * en.speed;
+
+                    const dist = Math.hypot(player.x - en.x, player.y - en.y);
+                    if (dist < player.radius + en.radius && !player.isDashing) {
+                        const dmg = Math.max(1, en.atk - player.def);
+                        player.hp -= dmg;
+                        playSound('hit');
+                        if (player.hp <= 0) triggerGameOver();
+                    }
+                } else if (en.type === 'projectile') {
+                    en.x += en.vx;
+                    en.y += en.vy;
+                    en.life--;
+
+                    // Check collision with monsters
+                    entities.forEach(m => {
+                        if (m.type === 'monster' || m.type === 'boss') {
+                            const dist = Math.hypot(m.x - en.x, m.y - en.y);
+                            if (dist < m.radius + en.radius) {
+                                m.hp -= en.dmg;
+                                m.hitFlash = 10;
+                                en.life = 0;
+                                floatingTexts.push({ x: m.x, y: m.y - 15, text: `${Math.floor(en.dmg)}`, color: '#38bdf8', life: 30 });
+                            }
+                        }
+                    });
+                }
+
+                // Check death
+                if (en.hp <= 0 && (en.type === 'monster' || en.type === 'boss')) {
+                    stats.monstersSlain++;
+                    playerProfile.totalKills++;
+                    player.exp += en.type === 'boss' ? 100 : 20;
+
+                    // Drop Gold
+                    const goldAmt = en.type === 'boss' ? 150 + currentFloor * 20 : 10 + currentFloor * 2;
+                    playerProfile.gold += goldAmt;
+                    stats.goldCollected += goldAmt;
+
+                    floatingTexts.push({ x: en.x, y: en.y, text: `+${goldAmt}G`, color: '#fbbf24', life: 40 });
+
+                    // Check level up
+                    if (player.exp >= player.maxExp) {
+                        player.exp -= player.maxExp;
+                        player.level++;
+                        player.maxExp = Math.floor(player.maxExp * 1.3);
+                        player.hp = player.maxHp;
+                        playSound('levelup');
+                        triggerPerkSelection();
+                    }
+
+                    if (en.type === 'boss') {
+                        currentFloor++;
+                        stats.floorsCleared++;
+                        if (currentFloor > playerProfile.bestFloor) {
+                            playerProfile.bestFloor = currentFloor;
+                        }
+                        spawnFloorMonsters();
+                    } else {
+                        enemiesRemaining--;
+                        if (enemiesRemaining <= 0) {
+                            currentFloor++;
+                            stats.floorsCleared++;
+                            if (currentFloor > playerProfile.bestFloor) {
+                                playerProfile.bestFloor = currentFloor;
+                            }
+                            spawnFloorMonsters();
+                        }
+                    }
+
+                    en.remove = true;
+                }
+            });
+
+            entities = entities.filter(e => !e.remove && (e.life === undefined || e.life > 0));
+
+            // Update Particles
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+            });
+            particles = particles.filter(p => p.life > 0);
+
+            // Update Floating Texts
+            floatingTexts.forEach(ft => {
+                ft.y -= 0.8;
+                ft.life--;
+            });
+            floatingTexts = floatingTexts.filter(ft => ft.life > 0);
+
+            // Update HUD elements
+            document.getElementById('hp-text').innerText = `${Math.ceil(player.hp)}/${player.maxHp}`;
+            document.getElementById('hp-bar').style.width = `${(player.hp / player.maxHp) * 100}%`;
+            document.getElementById('mana-text').innerText = `${Math.ceil(player.mana)}/${player.maxMana}`;
+            document.getElementById('mana-bar').style.width = `${(player.mana / player.maxMana) * 100}%`;
+            document.getElementById('exp-bar').style.width = `${(player.exp / player.maxExp) * 100}%`;
+            document.getElementById('level-display').innerText = `LV. ${player.level}`;
+            document.getElementById('gold-display').innerText = playerProfile.gold;
+            document.getElementById('objective-text').innerText = `Monsters Remaining: ${enemiesRemaining}`;
+        }
+
+        // --- ROGUELIKE PERK SYSTEM ---
+        function triggerPerkSelection() {
+            gameState = 'PERK';
+            const modal = document.getElementById('perk-modal');
+            const container = document.getElementById('perk-container');
+            container.innerHTML = '';
+
+            const allPerks = [
+                { title: 'Blade Sharpening', desc: 'Permanently increases Attack power by +20%.', action: () => { player.atk *= 1.2; } },
+                { title: 'Vampiric Touch', desc: 'Gain +8% Lifesteal on all melee attacks.', action: () => { player.lifesteal += 0.08; } },
+                { title: 'Vitality Surge', desc: 'Increase Maximum HP by +50 and heal fully.', action: () => { player.maxHp += 50; player.hp = player.maxHp; } },
+                { title: 'Swift Reflexes', desc: 'Increases movement speed and attack agility.', action: () => { player.speed += 0.8; } },
+                { title: 'Critical Eye', desc: 'Increases Critical Strike Chance by +15%.', action: () => { player.critRate += 0.15; } }
+            ];
+
+            // Pick 3 random
+            const shuffled = [...allPerks].sort(() => 0.5 - Math.random());
+            const chosen = shuffled.slice(0, 3);
+
+            chosen.forEach(perk => {
+                const card = document.createElement('div');
+                card.className = 'bg-slate-900 border border-slate-700 hover:border-cyan-400 p-6 rounded-2xl flex flex-col justify-between cursor-pointer transition-all transform hover:-translate-y-1 shadow-xl';
+                card.innerHTML = `
+                    <div>
+                        <h3 class="text-lg font-bold font-cinzel text-cyan-400 mb-2">${perk.title}</h3>
+                        <p class="text-xs text-slate-300 leading-relaxed">${perk.desc}</p>
+                    </div>
+                    <button class="mt-6 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs">Select Blessing</button>
+                `;
+                card.onclick = () => {
+                    perk.action();
+                    modal.classList.add('hidden');
+                    gameState = 'PLAYING';
+                };
+                container.appendChild(card);
+            });
+
+            modal.classList.remove('hidden');
+        }
+
+        // --- INVENTORY & SMITHING MODALS ---
+        function toggleInventory() {
+            const modal = document.getElementById('inventory-modal');
+            if (modal.classList.contains('hidden')) {
+                renderInventoryData();
+                modal.classList.remove('hidden');
+                gameState = 'INVENTORY';
+            } else {
+                modal.classList.add('hidden');
+                gameState = 'PLAYING';
+            }
+        }
+
+        function renderInventoryData() {
+            const eqList = document.getElementById('equipped-list');
+            eqList.innerHTML = `
+                <div class="p-3 bg-slate-950 border border-cyan-500/40 rounded-xl flex items-center justify-between">
+                    <div>
+                        <span class="text-xs text-cyan-400 font-bold block">${equippedGear.weapon.name} (+${equippedGear.weapon.enhance})</span>
+                        <span class="text-[10px] text-slate-400">ATK: +${equippedGear.weapon.atk}</span>
+                    </div>
+                    <span class="text-xs text-amber-400 font-mono">${equippedGear.weapon.rarity}</span>
+                </div>
+                <div class="p-3 bg-slate-950 border border-purple-500/40 rounded-xl flex items-center justify-between">
+                    <div>
+                        <span class="text-xs text-purple-400 font-bold block">${equippedGear.armor.name} (+${equippedGear.armor.enhance})</span>
+                        <span class="text-[10px] text-slate-400">DEF: +${equippedGear.armor.def}</span>
+                    </div>
+                    <span class="text-xs text-amber-400 font-mono">${equippedGear.armor.rarity}</span>
+                </div>
+            `;
+
+            const stashList = document.getElementById('stash-list');
+            stashList.innerHTML = inventoryStash.length === 0 ? '<span class="text-xs text-slate-500 italic col-span-2">Stash bag is empty.</span>' : '';
+        }
+
+        function toggleForge() {
+            const modal = document.getElementById('forge-modal');
+            if (modal.classList.contains('hidden')) {
+                renderForgeData();
+                modal.classList.remove('hidden');
+                gameState = 'FORGE';
+            } else {
+                modal.classList.add('hidden');
+                gameState = 'PLAYING';
+            }
+        }
+
+        function renderForgeData() {
+            const display = document.getElementById('forge-item-display');
+            const cost = (equippedGear.weapon.enhance + 1) * 100;
+            document.getElementById('upgrade-cost').innerText = cost;
+
+            display.innerHTML = `
+                <h4 class="font-cinzel font-bold text-sm text-purple-400 mb-1">${equippedGear.weapon.name}</h4>
+                <p class="text-xs text-slate-400 mb-2">Enhancement Level: <strong class="text-white">+${equippedGear.weapon.enhance}</strong></p>
+                <p class="text-[11px] text-cyan-300">Next Upgrade: +${Math.floor(equippedGear.weapon.atk * 0.2)} ATK</p>
+            `;
+        }
+
+        function upgradeEquipment() {
+            const cost = (equippedGear.weapon.enhance + 1) * 100;
+            if (playerProfile.gold >= cost) {
+                playerProfile.gold -= cost;
+                equippedGear.weapon.enhance++;
+                equippedGear.weapon.atk = Math.floor(equippedGear.weapon.atk * 1.2);
+                playSound('levelup');
+                renderForgeData();
+            }
+        }
+
+        function triggerGameOver() {
+            gameState = 'GAMEOVER';
+            if (currentFloor > playerProfile.bestFloor) {
+                playerProfile.bestFloor = currentFloor;
+            }
+
+            document.getElementById('stat-floors').innerText = stats.floorsCleared;
+            document.getElementById('stat-kills').innerText = stats.monstersSlain;
+            document.getElementById('stat-gold').innerText = stats.goldCollected;
+            document.getElementById('gameover-modal').classList.remove('hidden');
+        }
+
+        // --- RENDER LOOP ---
+        function renderGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (gameState !== 'PLAYING') return;
+
+            ctx.save();
+
+            // Screen Shake offset
+            let sX = 0;
+            let sY = 0;
+            if (screenShakeTime > 0) {
+                sX = (Math.random() - 0.5) * screenShakeIntensity;
+                sY = (Math.random() - 0.5) * screenShakeIntensity;
+            }
+            ctx.translate(canvas.width / 2 - player.x + sX, canvas.height / 2 - player.y + sY);
+
+            // Draw Dungeon Floor Grid
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1;
+            const gridSize = 100;
+            const startX = Math.floor((player.x - canvas.width) / gridSize) * gridSize;
+            const startY = Math.floor((player.y - canvas.height) / gridSize) * gridSize;
+
+            for (let x = startX; x < player.x + canvas.width; x += gridSize) {
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                if (this.type === 'rock') {
-                    ctx.fillStyle = '#64748b';
-                    ctx.shadowColor = '#0f172a';
-                    ctx.shadowBlur = 8;
+                ctx.moveTo(x, player.y - canvas.height);
+                ctx.lineTo(x, player.y + canvas.height);
+                ctx.stroke();
+            }
+            for (let y = startY; y < player.y + canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(player.x - canvas.width, y);
+                ctx.lineTo(player.x + canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Draw Entities (Monsters / Bosses / Projectiles)
+            entities.forEach(en => {
+                ctx.save();
+                ctx.translate(en.x, en.y);
+
+                if (en.type === 'monster') {
+                    ctx.fillStyle = en.hitFlash > 0 ? '#ffffff' : en.subType === 'tank' ? '#64748b' : en.subType === 'ranged' ? '#06b6d4' : '#ef4444';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, en.radius, 0, Math.PI * 2);
                     ctx.fill();
-                    ctx.strokeStyle = '#334155';
+                    ctx.strokeStyle = '#0f172a';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+
+                    // Monster HP bar
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+                    ctx.fillRect(-20, -en.radius - 12, 40, 5);
+                    ctx.fillStyle = '#ef4444';
+                    ctx.fillRect(-20, -en.radius - 12, 40 * (en.hp / en.maxHp), 5);
+                } else if (en.type === 'boss') {
+                    ctx.fillStyle = en.hitFlash > 0 ? '#ffffff' : en.phase2 ? '#dc2626' : '#9333ea';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, en.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#eab308';
                     ctx.lineWidth = 4;
                     ctx.stroke();
-                } else if (this.type === 'tree') {
-                    ctx.fillStyle = '#065f46';
-                    ctx.fill();
+
+                    // Boss name & HP
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 12px Cinzel';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(en.name, 0, -en.radius - 15);
+
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                    ctx.fillRect(-40, -en.radius - 10, 80, 6);
+                    ctx.fillStyle = '#a855f7';
+                    ctx.fillRect(-40, -en.radius - 10, 80 * (en.hp / en.maxHp), 6);
+                } else if (en.type === 'projectile') {
+                    ctx.fillStyle = en.color;
                     ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.radius * 0.7, 0, Math.PI * 2);
-                    ctx.fillStyle = '#047857';
-                    ctx.fill();
-                } else {
-                    ctx.fillStyle = 'rgba(14, 165, 233, 0.4)';
-                    ctx.fill();
-                    ctx.strokeStyle = '#0284c7';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                }
-                ctx.restore();
-            }
-        }
-
-        class Ant {
-            constructor(colony, type, x, y) {
-                this.colony = colony;
-                this.type = type;
-                const stats = CONFIG.antTypes[type];
-                this.x = x;
-                this.y = y;
-                this.maxHp = stats.hp;
-                this.hp = stats.hp;
-                this.attack = stats.attack;
-                this.speed = stats.speed;
-                this.maxCarry = stats.carry;
-                this.carriedFood = 0;
-                this.range = stats.range;
-                this.color = stats.color;
-                this.icon = stats.icon;
-                
-                this.state = 'idle'; // idle, gather, return, attack, explore, move
-                this.target = null;
-                this.targetPos = null;
-                this.attackCooldown = 0;
-                this.radius = 8;
-                this.angle = Math.random() * Math.PI * 2;
-            }
-
-            update(game) {
-                if (this.hp <= 0) return;
-
-                if (this.attackCooldown > 0) this.attackCooldown--;
-
-                // AI / State Machine
-                if (this.colony.isAI) {
-                    this.updateAI(game);
-                }
-
-                // Execute current state
-                if (this.state === 'move' && this.targetPos) {
-                    this.moveTo(this.targetPos.x, this.targetPos.y);
-                    if (Math.hypot(this.targetPos.x - this.x, this.targetPos.y - this.y) < 5) {
-                        this.state = 'idle';
-                    }
-                } else if (this.state === 'gather') {
-                    if (!this.target || !this.target.alive) {
-                        this.findNearestResource(game);
-                    } else {
-                        const dist = Math.hypot(this.target.x - this.x, this.target.y - this.y);
-                        if (dist < this.radius + this.target.radius) {
-                            // Harvest resource
-                            const take = Math.min(2, this.target.value);
-                            this.target.value -= take;
-                            this.carriedFood += take;
-                            if (this.target.value <= 0) {
-                                this.target.alive = false;
-                                this.target = null;
-                            }
-                            if (this.carriedFood >= this.maxCarry || !this.target) {
-                                this.state = 'return';
-                            }
-                        } else {
-                            this.moveTo(this.target.x, this.target.y);
-                        }
-                    }
-                } else if (this.state === 'return') {
-                    const dist = Math.hypot(this.colony.x - this.x, this.colony.y - this.y);
-                    if (dist < this.colony.getRadius()) {
-                        this.colony.food += this.carriedFood;
-                        this.carriedFood = 0;
-                        if (this.colony.isAI) {
-                            this.state = 'idle';
-                        } else {
-                            this.findNearestResource(game);
-                        }
-                    } else {
-                        this.moveTo(this.colony.x, this.colony.y);
-                    }
-                } else if (this.state === 'attack' && this.target) {
-                    if (this.target.hp <= 0) {
-                        this.target = null;
-                        this.state = 'idle';
-                    } else {
-                        const dist = Math.hypot(this.target.x - this.x, this.target.y - this.y);
-                        if (dist <= this.range + 10) {
-                            if (this.attackCooldown === 0) {
-                                this.target.hp -= this.attack;
-                                this.attackCooldown = 30;
-                                if (this.target.hp <= 0) {
-                                    game.addScore(this.colony, 20);
-                                }
-                            }
-                        } else {
-                            this.moveTo(this.target.x, this.target.y);
-                        }
-                    }
-                } else if (this.state === 'idle') {
-                    if (this.type === 'worker' || this.type === 'scout') {
-                        if (this.carriedFood > 0) {
-                            this.state = 'return';
-                        } else {
-                            this.findNearestResource(game);
-                        }
-                    } else if (this.type === 'soldier') {
-                        // Scan for nearby enemy ants
-                        const enemy = this.findNearestEnemy(game);
-                        if (enemy) {
-                            this.target = enemy;
-                            this.state = 'attack';
-                        }
-                    }
-                }
-            }
-
-            moveTo(tx, ty) {
-                const angle = Math.atan2(ty - this.y, tx - this.x);
-                this.x += Math.cos(angle) * this.speed;
-                this.y += Math.sin(angle) * this.speed;
-                this.angle = angle;
-            }
-
-            findNearestResource(game) {
-                let nearest = null;
-                let minDist = Infinity;
-                for (let res of game.resources) {
-                    if (!res.alive) continue;
-                    const d = Math.hypot(res.x - this.x, res.y - this.y);
-                    if (d < minDist) {
-                        minDist = d;
-                        nearest = res;
-                    }
-                }
-                if (nearest) {
-                    this.target = nearest;
-                    this.state = 'gather';
-                }
-            }
-
-            findNearestEnemy(game) {
-                let nearest = null;
-                let minDist = 200; // aggro range
-                for (let col of game.colonies) {
-                    if (col === this.colony) continue;
-                    for (let ant of col.ants) {
-                        if (ant.hp <= 0) continue;
-                        const d = Math.hypot(ant.x - this.x, ant.y - this.y);
-                        if (d < minDist) {
-                            minDist = d;
-                            nearest = ant;
-                        }
-                    }
-                    // Also check queen
-                    const qDist = Math.hypot(col.queen.x - this.x, col.queen.y - this.y);
-                    if (qDist < minDist) {
-                        minDist = qDist;
-                        nearest = col.queen;
-                    }
-                }
-                return nearest;
-            }
-
-            updateAI(game) {
-                // Simple autonomous AI behavior when idle
-                if (this.state === 'idle' && Math.random() < 0.05) {
-                    if (this.type === 'worker') {
-                        this.findNearestResource(game);
-                    } else if (this.type === 'soldier') {
-                        // Patrol or attack player
-                        const enemy = this.findNearestEnemy(game);
-                        if (enemy) {
-                            this.target = enemy;
-                            this.state = 'attack';
-                        } else {
-                            // wander around player colony
-                            this.targetPos = {
-                                x: game.playerColony.x + (Math.random() - 0.5) * 600,
-                                y: game.playerColony.y + (Math.random() - 0.5) * 600
-                            };
-                            this.state = 'move';
-                        }
-                    }
-                }
-            }
-
-            draw(ctx) {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.angle);
-
-                // Body
-                ctx.beginPath();
-                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.shadowColor = this.color;
-                ctx.shadowBlur = 6;
-                ctx.fill();
-                ctx.lineWidth = 1.5;
-                ctx.strokeStyle = '#000000';
-                ctx.stroke();
-
-                ctx.restore();
-
-                // If carrying food
-                if (this.carriedFood > 0) {
-                    ctx.fillStyle = '#f59e0b';
-                    ctx.beginPath();
-                    ctx.arc(this.x + 8, this.y - 8, 5, 0, Math.PI * 2);
+                    ctx.arc(0, 0, en.radius, 0, Math.PI * 2);
                     ctx.fill();
                 }
 
-                // HP Bar if damaged
-                if (this.hp < this.maxHp) {
-                    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-                    ctx.fillRect(this.x - 12, this.y - 16, 24, 4);
-                    ctx.fillStyle = '#22c55e';
-                    ctx.fillRect(this.x - 12, this.y - 16, 24 * (this.hp / this.maxHp), 4);
-                }
-            }
-        }
-
-        class Queen {
-            constructor(colony, x, y) {
-                this.colony = colony;
-                this.x = x;
-                this.y = y;
-                this.maxHp = CONFIG.antTypes.queen.hp;
-                this.hp = this.maxHp;
-                this.radius = 22;
-            }
-
-            draw(ctx) {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                
-                // Crown aura
-                ctx.beginPath();
-                ctx.arc(0, 0, this.radius + 4, 0, Math.PI * 2);
-                ctx.fillStyle = this.colony.color + '44';
-                ctx.fill();
-
-                // Queen Body
-                ctx.beginPath();
-                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.colony.color;
-                ctx.shadowColor = this.colony.color;
-                ctx.shadowBlur = 12;
-                ctx.fill();
-                ctx.lineWidth = 3;
-                ctx.strokeStyle = '#ffffff';
-                ctx.stroke();
-
                 ctx.restore();
+            });
 
-                // Icon
-                ctx.font = '18px sans-serif';
+            // Draw Player
+            ctx.save();
+            ctx.translate(player.x, player.y);
+
+            // Dash trail / Glow
+            if (player.isDashing) {
+                ctx.fillStyle = 'rgba(6, 182, 212, 0.4)';
+                ctx.beginPath();
+                ctx.arc(0, 0, player.radius + 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Body
+            ctx.fillStyle = '#38bdf8';
+            ctx.beginPath();
+            ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#0e7490';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Visor
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(-8, -4, 16, 6);
+
+            // Equipped Weapon preview in hand
+            const sObj = SWORDS_DATABASE.find(s => s.id === playerProfile.equippedSword) || SWORDS_DATABASE[0];
+            ctx.strokeStyle = sObj.color;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(12, 0);
+            ctx.lineTo(26, -12);
+            ctx.stroke();
+
+            ctx.restore();
+
+            // Draw Particles
+            particles.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life / p.maxLife;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            });
+
+            // Draw Floating Texts
+            floatingTexts.forEach(ft => {
+                ctx.fillStyle = ft.color;
+                ctx.font = 'bold 14px Rajdhani';
                 ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('👑', this.x, this.y);
+                ctx.fillText(ft.text, ft.x, ft.y);
+            });
 
-                // HP Bar
-                ctx.fillStyle = 'rgba(0,0,0,0.6)';
-                ctx.fillRect(this.x - 20, this.y - 32, 40, 5);
-                ctx.fillStyle = '#ef4444';
-                ctx.fillRect(this.x - 20, this.y - 32, 40 * (this.hp / this.maxHp), 5);
-            }
+            ctx.restore();
         }
 
-        class Colony {
-            constructor(name, x, y, color, isAI = false) {
-                this.name = name;
-                this.x = x;
-                this.y = y;
-                this.color = color;
-                this.isAI = isAI;
-                this.level = 1;
-                this.food = 100;
-                this.score = 0;
-                this.ants = [];
-                this.queen = new Queen(this, x, y);
-                this.spawnTimer = 0;
-            }
-
-            getRadius() {
-                return CONFIG.colonyLevels[this.level - 1].radius;
-            }
-
-            getMaxAnts() {
-                return CONFIG.colonyLevels[this.level - 1].maxAnts;
-            }
-
-            update(game) {
-                // Queen check
-                if (this.queen.hp <= 0) return;
-
-                // Update ants
-                for (let i = this.ants.length - 1; i >= 0; i--) {
-                    let ant = this.ants[i];
-                    ant.update(game);
-                    if (ant.hp <= 0) {
-                        this.ants.splice(i, 1);
-                    }
-                }
-
-                // AI production logic
-                if (this.isAI) {
-                    this.spawnTimer++;
-                    if (this.spawnTimer > 100 && this.ants.length < this.getMaxAnts()) {
-                        this.spawnTimer = 0;
-                        const types = ['worker', 'soldier', 'scout'];
-                        const type = types[Math.floor(Math.random() * types.length)];
-                        const cost = CONFIG.antTypes[type].cost;
-                        if (this.food >= cost) {
-                            this.food -= cost;
-                            const angle = Math.random() * Math.PI * 2;
-                            const dist = 30 + Math.random() * 30;
-                            this.ants.push(new Ant(this, type, this.x + Math.cos(angle) * dist, this.y + Math.sin(angle) * dist));
-                        }
-                    }
-
-                    // AI Colony upgrade logic
-                    const lvlData = CONFIG.colonyLevels[this.level];
-                    if (lvlData && this.food >= lvlData.cost && this.level < 5) {
-                        this.food -= lvlData.cost;
-                        this.level++;
-                    }
-                }
-            }
-
-            draw(ctx) {
-                const radius = this.getRadius();
-
-                // Territory Circle
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.color + '15';
-                ctx.fill();
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = this.color + '66';
-                ctx.setLineDash([6, 6]);
-                ctx.stroke();
-                ctx.restore();
-
-                // Colony Base Mound
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, 35, 0, Math.PI * 2);
-                ctx.fillStyle = '#451a03';
-                ctx.shadowColor = '#000';
-                ctx.shadowBlur = 10;
-                ctx.fill();
-                ctx.lineWidth = 4;
-                ctx.strokeStyle = this.color;
-                ctx.stroke();
-
-                // Queen
-                this.queen.draw(ctx);
-
-                // Ants
-                for (let ant of this.ants) {
-                    ant.draw(ctx);
-                }
-
-                // Name tag
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 12px "Jua", sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(this.name, this.x, this.y - 48);
-            }
+        // --- MAIN GAME LOOP TICK ---
+        function mainLoop() {
+            updateGame();
+            renderGame();
+            requestAnimationFrame(mainLoop);
         }
 
-        class GameManager {
-            constructor() {
-                this.canvas = document.getElementById('gameCanvas');
-                this.ctx = this.canvas.getContext('2d');
-                this.minimapCanvas = document.getElementById('minimapCanvas');
-                this.minimapCtx = this.minimapCanvas.getContext('2d');
-
-                this.width = window.innerWidth;
-                this.height = window.innerHeight;
-                this.canvas.width = this.width;
-                this.canvas.height = this.height;
-
-                this.camera = { x: CONFIG.mapWidth / 2, y: CONFIG.mapHeight / 2, zoom: 1 };
-                this.keys = {};
-                this.mouse = { x: 0, y: 0, worldX: 0, worldY: 0, isDown: false, startX: 0, startY: 0 };
-
-                this.colonies = [];
-                this.playerColony = null;
-                this.resources = [];
-                this.obstacles = [];
-
-                this.gameDuration = 300; // 5 mins default
-                this.timeRemaining = 300;
-                this.difficulty = 'normal';
-                this.gameStarted = false;
-                this.gameOver = false;
-                this.selectedAnts = [];
-
-                this.initListeners();
-            }
-
-            initListeners() {
-                window.addEventListener('resize', () => {
-                    this.width = window.innerWidth;
-                    this.height = window.innerHeight;
-                    this.canvas.width = this.width;
-                    this.canvas.height = this.height;
-                });
-
-                window.addEventListener('keydown', e => {
-                    this.keys[e.key.toLowerCase()] = true;
-                    // Quick unit selection with number keys
-                    if (e.key === '1') this.selectAntsType('worker');
-                    if (e.key === '2') this.selectAntsType('soldier');
-                    if (e.key === '3') this.selectAntsType('scout');
-                });
-                window.addEventListener('keyup', e => { this.keys[e.key.toLowerCase()] = false; });
-
-                this.canvas.addEventListener('mousedown', e => {
-                    this.mouse.isDown = true;
-                    this.mouse.startX = e.clientX;
-                    this.mouse.startY = e.clientY;
-                    this.screenToWorld(e.clientX, e.clientY);
-                    
-                    if (e.button === 0) { // Left click
-                        // Selection start
-                    }
-                });
-
-                this.canvas.addEventListener('mousemove', e => {
-                    this.mouse.x = e.clientX;
-                    this.mouse.y = e.clientY;
-                    this.screenToWorld(e.clientX, e.clientY);
-                });
-
-                this.canvas.addEventListener('mouseup', e => {
-                    if (!this.mouse.isDown) return;
-                    this.mouse.isDown = false;
-
-                    const wx = this.mouse.worldX;
-                    const wy = this.mouse.worldY;
-
-                    if (e.button === 0) {
-                        // Select ants near click or box select
-                        const dist = Math.hypot(e.clientX - this.mouse.startX, e.clientY - this.mouse.startY);
-                        if (dist < 10) {
-                            // Single click select
-                            this.selectedAnts = [];
-                            for (let ant of this.playerColony.ants) {
-                                if (Math.hypot(ant.x - wx, ant.y - wy) < 25) {
-                                    this.selectedAnts.push(ant);
-                                    break;
-                                }
-                            }
-                        } else {
-                            // Box select
-                            this.screenToWorld(this.mouse.startX, this.mouse.startY);
-                            const x1 = Math.min(this.mouse.worldX, wx);
-                            const x2 = Math.max(this.mouse.worldX, wx);
-                            const y1 = Math.min(this.mouse.worldY, wy);
-                            const y2 = Math.max(this.mouse.worldY, wy);
-
-                            this.selectedAnts = this.playerColony.ants.filter(ant => 
-                                ant.x >= x1 && ant.x <= x2 && ant.y >= y1 && ant.y <= y2
-                            );
-                        }
-                        this.updateSelectionHUD();
-                    } else if (e.button === 2) { // Right click command
-                        if (this.selectedAnts.length > 0) {
-                            // Check if clicking enemy or resource
-                            let targetRes = this.resources.find(r => Math.hypot(r.x - wx, r.y - wy) < r.radius + 15);
-                            let targetEnemyAnt = null;
-                            for (let col of this.colonies) {
-                                if (col === this.playerColony) continue;
-                                for (let ant of col.ants) {
-                                    if (Math.hypot(ant.x - wx, ant.y - wy) < 20) {
-                                        targetEnemyAnt = ant;
-                                        break;
-                                    }
-                                }
-                                if (targetEnemyAnt) break;
-                            }
-
-                            for (let ant of this.selectedAnts) {
-                                if (targetRes) {
-                                    ant.target = targetRes;
-                                    ant.state = 'gather';
-                                } else if (targetEnemyAnt) {
-                                    ant.target = targetEnemyAnt;
-                                    ant.state = 'attack';
-                                } else {
-                                    ant.targetPos = { x: wx + (Math.random() - 0.5) * 30, y: wy + (Math.random() - 0.5) * 30 };
-                                    ant.state = 'move';
-                                }
-                            }
-                            this.showNotification('명령 하달 완료!', 'success');
-                        }
-                    }
-                });
-
-                this.canvas.addEventListener('contextmenu', e => e.preventDefault());
-
-                this.canvas.addEventListener('wheel', e => {
-                    this.camera.zoom += e.deltaY * -0.001;
-                    this.camera.zoom = Math.max(0.5, Math.min(2.0, this.camera.zoom));
-                });
-            }
-
-            screenToWorld(sx, sy) {
-                const cx = this.width / 2;
-                const cy = this.height / 2;
-                this.mouse.worldX = (sx - cx) / this.camera.zoom + this.camera.x;
-                this.mouse.worldY = (sy - cy) / this.camera.zoom + this.camera.y;
-            }
-
-            setDuration(mins) {
-                this.gameDuration = mins * 60;
-                this.timeRemaining = this.gameDuration;
-                document.getElementById('btnMode5').className = mins === 5 ? 'py-2.5 px-3 rounded-xl border border-emerald-500 bg-emerald-600/30 text-emerald-300 retro-font text-sm transition-all flex items-center justify-center gap-2' : 'py-2.5 px-3 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 retro-font text-sm transition-all flex items-center justify-center gap-2';
-                document.getElementById('btnMode10').className = mins === 10 ? 'py-2.5 px-3 rounded-xl border border-emerald-500 bg-emerald-600/30 text-emerald-300 retro-font text-sm transition-all flex items-center justify-center gap-2' : 'py-2.5 px-3 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 retro-font text-sm transition-all flex items-center justify-center gap-2';
-            }
-
-            setDifficulty(diff) {
-                this.difficulty = diff;
-                ['Easy', 'Normal', 'Hard'].forEach(d => {
-                    const btn = document.getElementById('btnDiff' + d);
-                    if (d.toLowerCase() === diff) {
-                        btn.className = 'py-2 rounded-lg border border-emerald-500 bg-emerald-600/30 text-emerald-300 text-xs font-bold transition-all';
-                    } else {
-                        btn.className = 'py-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 text-xs font-bold transition-all';
-                    }
-                });
-            }
-
-            openHowToPlay() {
-                document.getElementById('howToPlayModal').classList.remove('hidden');
-                document.getElementById('howToPlayModal').classList.add('flex');
-            }
-
-            closeHowToPlay() {
-                document.getElementById('howToPlayModal').classList.add('hidden');
-                document.getElementById('howToPlayModal').classList.remove('flex');
-            }
-
-            startGame() {
-                document.getElementById('startModal').classList.add('hidden');
-                this.initWorld();
-                this.gameStarted = true;
-                
-                // Start timer interval
-                setInterval(() => {
-                    if (!this.gameStarted || this.gameOver) return;
-                    this.timeRemaining--;
-                    if (this.timeRemaining <= 0) {
-                        this.endGame(true);
-                    }
-                }, 1000);
-
-                requestAnimationFrame(() => this.loop());
-            }
-
-            initWorld() {
-                this.colonies = [];
-                this.resources = [];
-                this.obstacles = [];
-
-                // Create Player Colony
-                this.playerColony = new Colony('내 왕국', CONFIG.mapWidth / 2, CONFIG.mapHeight / 2, '#10b981', false);
-                // Starting ants
-                for (let i = 0; i < 3; i++) {
-                    this.playerColony.ants.push(new Ant(this.playerColony, 'worker', this.playerColony.x + (Math.random() - 0.5) * 40, this.playerColony.y + (Math.random() - 0.5) * 40));
-                }
-                this.colonies.push(this.playerColony);
-
-                // Create AI Colonies (4 AI kingdoms)
-                const aiColors = ['#f87171', '#38bdf8', '#fbbf24', '#a855f7'];
-                const aiNames = ['붉은 군단', '푸른 돌격대', '황금 제국', '자보 숲 왕국'];
-                for (let i = 0; i < 4; i++) {
-                    const angle = (Math.PI * 2 / 4) * i;
-                    const dist = 900;
-                    const ax = CONFIG.mapWidth / 2 + Math.cos(angle) * dist;
-                    const ay = CONFIG.mapHeight / 2 + Math.sin(angle) * dist;
-                    const aiCol = new Colony(aiNames[i], ax, ay, aiColors[i], true);
-                    for (let j = 0; j < 3; j++) {
-                        aiCol.ants.push(new Ant(aiCol, 'worker', ax + (Math.random() - 0.5) * 40, ay + (Math.random() - 0.5) * 40));
-                    }
-                    this.colonies.push(aiCol);
-                }
-
-                // Create Resources
-                const resTypes = ['apple', 'cookie', 'plant', 'water', 'rare'];
-                for (let i = 0; i < 60; i++) {
-                    const type = resTypes[Math.floor(Math.random() * resTypes.length)];
-                    const x = 200 + Math.random() * (CONFIG.mapWidth - 400);
-                    const y = 200 + Math.random() * (CONFIG.mapHeight - 400);
-                    this.resources.push(new Resource(x, y, type));
-                }
-
-                // Create Obstacles
-                for (let i = 0; i < 25; i++) {
-                    const x = 300 + Math.random() * (CONFIG.mapWidth - 600);
-                    const y = 300 + Math.random() * (CONFIG.mapHeight - 600);
-                    const types = ['rock', 'tree', 'waterpool'];
-                    this.obstacles.push(new Obstacle(x, y, 35 + Math.random() * 40, types[Math.floor(Math.random() * types.length)]));
-                }
-
-                this.camera.x = this.playerColony.x;
-                this.camera.y = this.playerColony.y;
-            }
-
-            spawnAnt(type) {
-                const cost = CONFIG.antTypes[type].cost;
-                if (this.playerColony.food >= cost) {
-                    if (this.playerColony.ants.length >= this.playerColony.getMaxAnts()) {
-                        this.showNotification('개미집 최대 수용 인원에 도달했습니다!', 'error');
-                        return;
-                    }
-                    this.playerColony.food -= cost;
-                    const angle = Math.random() * Math.PI * 2;
-                    this.playerColony.ants.push(new Ant(this.playerColony, type, this.playerColony.x + Math.cos(angle) * 40, this.playerColony.y + Math.sin(angle) * 40));
-                    this.showNotification(`${CONFIG.antTypes[type].name} 생산 완료!`, 'success');
-                } else {
-                    this.showNotification('식량이 부족합니다!', 'error');
-                }
-            }
-
-            upgradeColony() {
-                const nextLvl = this.playerColony.level + 1;
-                const lvlData = CONFIG.colonyLevels[nextLvl - 1];
-                if (!lvlData) {
-                    this.showNotification('이미 최고 레벨입니다!', 'info');
-                    return;
-                }
-                if (this.playerColony.food >= lvlData.cost) {
-                    this.playerColony.food -= lvlData.cost;
-                    this.playerColony.level = nextLvl;
-                    this.showNotification(`개미집 LV.${nextLvl} 업그레이드 성공!`, 'success');
-                } else {
-                    this.showNotification('업그레이드 식량이 부족합니다!', 'error');
-                }
-            }
-
-            selectAntsType(type) {
-                this.selectedAnts = this.playerColony.ants.filter(a => a.type === type);
-                this.updateSelectionHUD();
-            }
-
-            commandSelected(action) {
-                if (this.selectedAnts.length === 0) return;
-                for (let ant of this.selectedAnts) {
-                    if (action === 'gather') {
-                        ant.findNearestResource(this);
-                    } else if (action === 'return') {
-                        ant.state = 'return';
-                    }
-                }
-                this.showNotification('명령이 전달되었습니다.', 'success');
-            }
-
-            addScore(colony, pts) {
-                colony.score += pts;
-            }
-
-            showNotification(text, type = 'info') {
-                const area = document.getElementById('notificationArea');
-                const div = document.createElement('div');
-                div.className = `px-4 py-2 rounded-xl text-xs retro-font shadow-lg backdrop-blur-md border animate-bounce pointer-events-none ${
-                    type === 'success' ? 'bg-emerald-900/80 border-emerald-500 text-emerald-200' :
-                    type === 'error' ? 'bg-rose-900/80 border-rose-500 text-rose-200' : 'bg-slate-900/80 border-slate-700 text-slate-200'
-                }`;
-                div.innerHTML = text;
-                area.appendChild(div);
-                setTimeout(() => div.remove(), 2500);
-            }
-
-            updateSelectionHUD() {
-                const info = document.getElementById('selectionInfo');
-                const text = document.getElementById('selectionText');
-                if (this.selectedAnts.length > 0) {
-                    info.classList.remove('hidden');
-                    text.innerText = `선택된 개미: ${this.selectedAnts.length}마리`;
-                } else {
-                    info.classList.add('hidden');
-                }
-            }
-
-            update() {
-                if (!this.gameStarted || this.gameOver) return;
-
-                // Camera WASD / Arrow keys movement
-                const camSpeed = 12 / this.camera.zoom;
-                if (this.keys['w'] || this.keys['arrowup']) this.camera.y -= camSpeed;
-                if (this.keys['s'] || this.keys['arrowdown']) this.camera.y += camSpeed;
-                if (this.keys['a'] || this.keys['arrowleft']) this.camera.x -= camSpeed;
-                if (this.keys['d'] || this.keys['arrowright']) this.camera.x += camSpeed;
-
-                // Clamp camera within map bounds
-                this.camera.x = Math.max(200, Math.min(CONFIG.mapWidth - 200, this.camera.x));
-                this.camera.y = Math.max(200, Math.min(CONFIG.mapHeight - 200, this.camera.y));
-
-                // Update colonies
-                for (let col of this.colonies) {
-                    col.update(this);
-                }
-
-                // Check win/loss condition
-                if (this.playerColony.queen.hp <= 0) {
-                    this.endGame(false);
-                }
-
-                // Check if all AI queens are dead
-                const aliveAI = this.colonies.filter(c => c.isAI && c.queen.hp > 0);
-                if (aliveAI.length === 0) {
-                    this.endGame(true);
-                }
-
-                // UI HUD updates
-                document.getElementById('hudColonyName').innerHTML = `<i class="fa-solid fa-chess-rook"></i> ${this.playerColony.name}`;
-                document.getElementById('hudColonyLevel').innerText = `LV. ${this.playerColony.level}`;
-                document.getElementById('hudFood').innerText = `${Math.floor(this.playerColony.food)} / ${CONFIG.colonyLevels[this.playerColony.level - 1].capacity}`;
-                document.getElementById('hudAnts').innerText = `${this.playerColony.ants.length} / ${this.playerColony.getMaxAnts()}`;
-                document.getElementById('hudScore').innerText = `${this.playerColony.score}`;
-                
-                const mins = String(Math.floor(this.timeRemaining / 60)).padStart(2, '0');
-                const secs = String(this.timeRemaining % 60).padStart(2, '0');
-                document.getElementById('hudTimer').innerText = `${mins}:${secs}`;
-
-                // Upgrade button text update
-                const nextLvl = this.playerColony.level + 1;
-                const lvlData = CONFIG.colonyLevels[nextLvl - 1];
-                if (lvlData) {
-                    document.getElementById('upgradeTitle').innerText = `개미집 Lv.${nextLvl} 업그레이드`;
-                    document.getElementById('upgradeCost').innerHTML = `<i class="fa-solid fa-apple-whole text-[9px]"></i> ${lvlData.cost} 식량`;
-                } else {
-                    document.getElementById('upgradeTitle').innerText = `최고 레벨 달성`;
-                    document.getElementById('upgradeCost').innerText = `MAX LEVEL`;
-                }
-
-                // Update Leaderboard
-                this.updateLeaderboard();
-            }
-
-            updateLeaderboard() {
-                const sorted = [...this.colonies].sort((a, b) => b.score - a.score || b.ants.length - a.ants.length);
-                const list = document.getElementById('leaderboardList');
-                list.innerHTML = '';
-                sorted.slice(0, 5).forEach((col, idx) => {
-                    const row = document.createElement('div');
-                    row.className = `flex justify-between items-center text-xs px-2 py-1 rounded ${col === this.playerColony ? 'bg-emerald-900/40 border border-emerald-500/30' : 'bg-black/30'}`;
-                    row.innerHTML = `
-                        <span class="flex items-center gap-1.5"><span class="font-bold text-amber-400">#${idx+1}</span> <span style="color: ${col.color}">${col.name}</span></span>
-                        <span class="font-semibold text-slate-300">${col.score}점</span>
-                    `;
-                    list.appendChild(row);
-                });
-            }
-
-            draw() {
-                this.ctx.clearRect(0, 0, this.width, this.height);
-
-                this.ctx.save();
-                this.ctx.translate(this.width / 2, this.height / 2);
-                this.ctx.scale(this.camera.zoom, this.camera.zoom);
-                this.ctx.translate(-this.camera.x, -this.camera.y);
-
-                // Draw map background grid / floor
-                this.ctx.fillStyle = '#064e3b';
-                this.ctx.fillRect(0, 0, CONFIG.mapWidth, CONFIG.mapHeight);
-
-                // Grid lines pattern
-                this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
-                this.ctx.lineWidth = 2;
-                const gridSize = 100;
-                for (let x = 0; x < CONFIG.mapWidth; x += gridSize) {
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(x, 0);
-                    this.ctx.lineTo(x, CONFIG.mapHeight);
-                    this.ctx.stroke();
-                }
-                for (let y = 0; y < CONFIG.mapHeight; y += gridSize) {
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(0, y);
-                    this.ctx.lineTo(CONFIG.mapWidth, y);
-                    this.ctx.stroke();
-                }
-
-                // Draw Obstacles
-                for (let obs of this.obstacles) {
-                    obs.draw(this.ctx);
-                }
-
-                // Draw Resources
-                for (let res of this.resources) {
-                    if (res.alive) res.draw(this.ctx);
-                }
-
-                // Draw Colonies
-                for (let col of this.colonies) {
-                    col.draw(this.ctx);
-                }
-
-                // Draw selection highlight for ants
-                for (let ant of this.selectedAnts) {
-                    this.ctx.beginPath();
-                    this.ctx.arc(ant.x, ant.y, ant.radius + 5, 0, Math.PI * 2);
-                    this.ctx.strokeStyle = '#38bdf8';
-                    this.ctx.lineWidth = 2;
-                    this.ctx.stroke();
-                }
-
-                this.ctx.restore();
-
-                // Draw Minimap
-                this.drawMinimap();
-            }
-
-            drawMinimap() {
-                const mCtx = this.minimapCtx;
-                const mw = this.minimapCanvas.width;
-                const mh = this.minimapCanvas.height;
-                mCtx.clearRect(0, 0, mw, mh);
-
-                const scaleX = mw / CONFIG.mapWidth;
-                const scaleY = mh / CONFIG.mapHeight;
-
-                // Draw colonies on minimap
-                for (let col of this.colonies) {
-                    mCtx.fillStyle = col.color;
-                    mCtx.beginPath();
-                    mCtx.arc(col.x * scaleX, col.y * scaleY, 4, 0, Math.PI * 2);
-                    mCtx.fill();
-                }
-
-                // Draw camera viewport box on minimap
-                mCtx.strokeStyle = '#38bdf8';
-                mCtx.lineWidth = 1;
-                const viewW = (this.width / this.camera.zoom) * scaleX;
-                const viewH = (this.height / this.camera.zoom) * scaleY;
-                mCtx.strokeRect((this.camera.x - (this.width / 2) / this.camera.zoom) * scaleX, (this.camera.y - (this.height / 2) / this.camera.zoom) * scaleY, viewW, viewH);
-            }
-
-            endGame(isWin) {
-                this.gameOver = true;
-                document.getElementById('gameOverModal').classList.remove('hidden');
-                document.getElementById('gameOverModal').classList.add('flex');
-                document.getElementById('gameOverIcon').innerText = isWin ? '🏆' : '💀';
-                document.getElementById('gameOverTitle').innerText = isWin ? '게임 승리!' : '왕국 멸망...';
-                document.getElementById('gameOverDesc').innerText = isWin ? '모든 적 왕국을 정복하고 개미 왕국을 통일했습니다!' : '여왕개미가 쓰러져 개미 왕국이 멸망했습니다.';
-                
-                document.getElementById('finalScore').innerText = this.playerColony.score;
-                document.getElementById('finalFood').innerText = Math.floor(this.playerColony.food);
-                document.getElementById('finalAnts').innerText = this.playerColony.ants.length;
-            }
-
-            loop() {
-                this.update();
-                this.draw();
-                if (!this.gameOver) {
-                    requestAnimationFrame(() => this.loop());
-                }
-            }
-        }
-
-        // Initialize Game Instance
-        const game = new GameManager();
+        // Initialize Home UI on load
+        window.onload = function() {
+            updateHomeScreenUI();
+            requestAnimationFrame(mainLoop);
+        };
     </script>
 </body>
 </html>
